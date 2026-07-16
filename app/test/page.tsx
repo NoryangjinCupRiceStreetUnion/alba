@@ -1,91 +1,43 @@
 import Link from "next/link"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { PrismaClient } from "@/lib/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Button } from "@/components/ui/button";
-import { Field, FieldLabel } from "@/components/ui/field"
-import { Progress } from "@/components/ui/progress"
 import { redirect } from "next/navigation"
 
-
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+import { auth } from "@/auth"
+import { prisma } from "@/lib/prisma"
 
 export default async function Page() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
+  if (!session) redirect("/login?callbackUrl=/test")
 
-  if (!session) {
-    // 로그인이 안 되어 있으면 로그인 페이지로 리다이렉트
-    redirect("/api/auth/signin?callbackUrl=/")
-  }
-  // const session = await getServerSession(authOptions)
-  const posts = await prisma.post.findMany({
-    orderBy: [
-      { order: "asc" },
-      { id: "asc" },
-    ],
+  const items = await prisma.item.findMany({
+    where: { status: "AVAILABLE" },
+    orderBy: { createdAt: "desc" },
+    include: { images: { orderBy: { order: "asc" }, take: 1 } },
   })
 
-  // determine which posts the signed-in user has watched
-  let watchedIds = new Set<number>()
-  if (session?.user?.email) {
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { watchedPosts: true },
-    })
-    watchedIds = new Set((user?.watchedPosts ?? []).map((p: any) => p.id))
-  }
-
   return (
-    <div className="min-h-svh p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold">강의 목록</h1>
-
-        <Field className="w-full pt-5 px-1">
-          {(() => {
-            const total = posts.length
-            const completed = watchedIds.size
-            const percent = total > 0 ? Math.round((completed / total) * 100) : 0
-            return (
-              <>
-                <FieldLabel htmlFor="progress-upload">
-                  <span>전체 수강률</span>
-                  <span className="ml-auto">{percent}% · {completed}/{total}</span>
-                </FieldLabel>
-                <Progress value={percent} id="progress-upload" />
-              </>
-            )
-          })()}
-        </Field>
-      </div>
-
-      {posts.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-base text-slate-700">
-          저장된 강의가 없습니다.
-        </div>
+    <main className="min-h-svh p-6">
+      <h1 className="mb-6 text-3xl font-semibold">등록된 물건</h1>
+      {items.length === 0 ? (
+        <p className="text-muted-foreground">등록된 물건이 없습니다.</p>
       ) : (
-        <div className="grid gap-4">
-          {posts.map((post: any) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((item) => (
             <Link
-              key={post.id}
-              href={`/study/${post.id}`}
-              className="bg-card text-card-foreground rounded-lg border border-border p-4 shadow-sm rounded-xs transition hover:border-slate-300 hover:shadow-md"
+              key={item.id}
+              href={`/test/${item.id}`}
+              className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             >
-              <div className="text-lg font-medium">{post.title}</div>
-              <div className="mt-2 text-sm text-muted-foreground line-clamp-3">
-                {post.content?.slice(0, 160) ?? "요약 정보가 없습니다."}
-              </div>
-              <div className="mt-3">
-                {watchedIds.has(post.id) ? (
-                  <span className="rounded-full bg-emerald-600 px-2 py-1 text-white text-xs">완료</span>
-                ) : null}
-              </div>
+              <h2 className="text-lg font-medium">{item.name}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {item.region}
+              </p>
+              <p className="mt-3 font-semibold">
+                1일 {item.dailyPrice.toLocaleString("ko-KR")}원
+              </p>
             </Link>
           ))}
         </div>
       )}
-    </div>
-  );
+    </main>
+  )
 }

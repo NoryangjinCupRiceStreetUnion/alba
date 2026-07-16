@@ -1,23 +1,40 @@
-import { auth, signOut } from "@/auth"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { notFound } from "next/navigation"
 
-export default async function Page() {
-  const session = await auth()
-  const user = session?.user
+import { Button } from "@/components/ui/button"
+import { prisma } from "@/lib/prisma"
+
+type Props = { params: Promise<{ id: string }> }
+
+export default async function Page({ params }: Props) {
+  const { id } = await params
+  const item = await prisma.item.findUnique({
+    where: { id },
+    include: {
+      images: { orderBy: { order: "asc" } },
+      owner: { select: { name: true, nickname: true, trustBattery: true } },
+    },
+  })
+
+  if (!item) notFound()
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#090b11] p-6 text-white">
-      <div className="w-full h-[300px] mx-[20px] bg-white rounded-2xl mt-6">
-        <img src="/test.png" alt="" />
-      </div>
-
-      <div className="mt-6 flex flex-col items-left w-full px-[20px] space-y-2 text-left">
-        <h2 className="text-2xl font-bold  text-white">상품명</h2>
-        <span className="text-lg font-bold  text-white">1일 / 2,000   1주 /  10,000원</span>
-      </div>
-      <Button className="mt-6 w-[300px]">대여하기</Button>
-    </div>
+    <main className="mx-auto flex min-h-svh w-full max-w-2xl flex-col justify-center p-6">
+      <p className="text-sm text-muted-foreground">{item.region}</p>
+      <h1 className="mt-2 text-3xl font-bold">{item.name}</h1>
+      <p className="mt-4 whitespace-pre-wrap text-muted-foreground">
+        {item.description}
+      </p>
+      <p className="mt-6 text-lg font-bold">
+        1일 {item.dailyPrice.toLocaleString("ko-KR")}원
+        {item.weeklyPrice === null
+          ? null
+          : ` · 1주 ${item.weeklyPrice.toLocaleString("ko-KR")}원`}
+      </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {item.owner.nickname ?? item.owner.name ?? "사용자"} · 신뢰배터리{" "}
+        {item.owner.trustBattery}
+      </p>
+      <Button className="mt-8">대여하기</Button>
+    </main>
   )
 }
-
