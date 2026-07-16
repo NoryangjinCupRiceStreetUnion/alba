@@ -17,7 +17,7 @@ export default async function Page({ params }: PageProps) {
     where: { id },
     include: {
       images: { orderBy: { order: "asc" } },
-      owner: { select: { id: true, name: true, nickname: true, image: true, mannerScore: true } },
+      owner: { select: { id: true, name: true, nickname: true, image: true, trustBattery: true } },
       rentals: {
         where: { status: { in: ["APPROVED", "BORROWED"] } },
         select: { startAt: true, endAt: true },
@@ -40,7 +40,7 @@ export default async function Page({ params }: PageProps) {
     tradeMethod: item.tradeMethod,
     available: item.status === "AVAILABLE",
     ownerNickname: item.owner?.nickname || item.owner?.name || "알 수 없음",
-    ownerMannerScore: item.owner?.mannerScore ?? 36.5,
+    ownerTrustBattery: item.owner?.trustBattery ?? 80,
     imageUrl: item.images[0]?.url ?? "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&auto=format&fit=crop&q=80",
     gallery: item.images.map((image) => image.url),
     description: item.description,

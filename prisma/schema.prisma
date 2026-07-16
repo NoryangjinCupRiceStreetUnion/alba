@@ -7,8 +7,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// ───── Enums ─────
-
 enum TradeMethod {
   MEET
   DELIVER
@@ -28,24 +26,25 @@ enum RentalStatus {
   CANCELED
 }
 
-// ───── Auth.js 모델 ─────
-
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  nickname      String?
-  mannerScore   Float     @default(36.5)
-  accounts      Account[]
-  sessions      Session[]
-  items         Item[]
-  rentals       Rental[]  @relation("BorrowerRentals")
-  sentMessages  ChatMessage[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String        @id @default(cuid())
+  name            String?
+  email           String        @unique
+  emailVerified   DateTime?
+  image           String?
+  nickname        String?
+  trustBattery    Float         @default(80)
+  accounts        Account[]
+  sessions        Session[]
+  items           Item[]
+  rentals         Rental[]      @relation("BorrowerRentals")
+  reviewsWritten  Review[]      @relation("ReviewAuthor")
+  reviewsReceived Review[]      @relation("ReviewTarget")
+  ownedChats      Chat[]        @relation("ChatOwner")
+  borrowedChats   Chat[]        @relation("ChatBorrower")
+  sentMessages    ChatMessage[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Account {
@@ -60,11 +59,9 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
 }
@@ -74,9 +71,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model VerificationToken {
@@ -87,37 +83,54 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
-// ───── 비즈니스 모델 ─────
-
 model Item {
-  id             String     @id @default(cuid())
+  id             String            @id @default(cuid())
   ownerId        String
   name           String
-  description    String
+  description    String            @db.Text
   tradeMethod    TradeMethod
   region         String
   dailyPrice     Int
   weeklyPrice    Int?
   availableFrom  DateTime
   availableUntil DateTime
-  status         ItemStatus @default(AVAILABLE)
+  status         ItemStatus        @default(AVAILABLE)
+  owner          User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  images         ItemImage[]
+  rentals        Rental[]
+  metrics        ItemMetricDaily[]
+  chats          Chat[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
-  owner   User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  images  ItemImage[]
-  rentals Rental[]
-  chats   Chat[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([status, createdAt])
+  @@index([ownerId, status])
+  @@index([region])
+  @@index([dailyPrice])
 }
 
 model ItemImage {
   id     String @id @default(cuid())
   itemId String
-  url    String
+  url    String @db.Text
   order  Int    @default(0)
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  @@unique([itemId, order])
+  @@index([itemId])
+}
+
+model ItemMetricDaily {
+  id                  String   @id @default(cuid())
+  itemId              String
+  date                DateTime @db.Date
+  viewCount           Int      @default(0)
+  rentalRequestCount  Int      @default(0)
+  rentalApprovedCount Int      @default(0)
+  item                Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, date])
+  @@index([date])
 }
 
 model Rental {
@@ -128,38 +141,60 @@ model Rental {
   endAt      DateTime
   totalPrice Int
   status     RentalStatus @default(REQUESTED)
+  item       Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  borrower   User         @relation("BorrowerRentals", fields: [borrowerId], references: [id], onDelete: Restrict)
+  reviews    Review[]
+  chat       Chat?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
-  item     Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  borrower User  @relation("BorrowerRentals", fields: [borrowerId], references: [id], onDelete: Cascade)
-  chat     Chat?
+  @@index([borrowerId, status, createdAt])
+  @@index([itemId, status, startAt, endAt])
+}
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Review {
+  id           String   @id @default(cuid())
+  rentalId     String
+  authorId     String
+  targetUserId String
+  rating       Int
+  content      String?  @db.Text
+  rental       Rental   @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  author       User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  targetUser   User     @relation("ReviewTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@unique([rentalId, authorId, targetUserId])
+  @@index([targetUserId, createdAt])
 }
 
 model Chat {
-  id        String @id @default(cuid())
-  itemId    String
-  rentalId  String? @unique
-  ownerId   String
+  id         String        @id @default(cuid())
+  itemId     String
+  rentalId   String?       @unique
+  ownerId    String
   borrowerId String
+  item       Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  rental     Rental?       @relation(fields: [rentalId], references: [id], onDelete: SetNull)
+  owner      User          @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  borrower   User          @relation("ChatBorrower", fields: [borrowerId], references: [id], onDelete: Cascade)
+  messages   ChatMessage[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
-  item     Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  rental   Rental?       @relation(fields: [rentalId], references: [id])
-  messages ChatMessage[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([itemId])
+  @@index([ownerId, updatedAt])
+  @@index([borrowerId, updatedAt])
 }
 
 model ChatMessage {
-  id       String @id @default(cuid())
-  chatId   String
-  senderId String
-  content  String
-
-  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(cuid())
+  chatId    String
+  senderId  String
+  content   String   @db.Text
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  @@index([chatId, createdAt])
 }

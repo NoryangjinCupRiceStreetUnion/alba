@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Separator } from "@/components/ui/separator"
 import BatteryProgress from "@/components/bat"
 import { toast } from "sonner"
+import type { Session } from "next-auth"
 
 interface ItemType {
   id: string
@@ -21,7 +22,7 @@ interface ItemType {
   tradeMethod: string
   available?: boolean
   ownerNickname?: string
-  ownerMannerScore?: number
+  ownerTrustBattery?: number
   imageUrl?: string
   gallery?: string[]
   description: string
@@ -31,7 +32,7 @@ interface ItemType {
 
 interface ItemDetailClientProps {
   item: ItemType
-  user: any
+  user: Session["user"] | undefined
 }
 
 export default function ItemDetailClient({ item, user }: ItemDetailClientProps) {
@@ -242,8 +243,8 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
             </div>
             {/* 신뢰 배터리 */}
             <div className="flex flex-col items-end gap-1">
-              <span className="text-[9px] text-muted-foreground font-bold">신뢰 배터리 {(item.ownerMannerScore ?? 36.5) >= 80 ? "🔥" : ""}</span>
-              <BatteryProgress percentage={item.ownerMannerScore ?? 36.5} />
+              <span className="text-[9px] text-muted-foreground font-bold">신뢰 배터리 {(item.ownerTrustBattery ?? 80) >= 80 ? "🔥" : ""}</span>
+              <BatteryProgress percentage={item.ownerTrustBattery ?? 80} />
             </div>
           </div>
 

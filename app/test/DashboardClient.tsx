@@ -4,9 +4,10 @@ import { useState } from "react"
 import { Sparkles, CheckCircle2, PlayCircle, BookOpen, Repeat, ShieldCheck, Bookmark, ArrowRight, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import type { Session } from "next-auth"
 
 interface DashboardClientProps {
-  user: any
+  user: Session["user"]
 }
 
 const MOCK_COURSES = [

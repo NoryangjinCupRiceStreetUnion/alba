@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       include: {
         images: { orderBy: { order: "asc" }, take: 1 },
-        owner: { select: { id: true, name: true, nickname: true, image: true, mannerScore: true } },
+        owner: { select: { id: true, name: true, nickname: true, image: true, trustBattery: true } },
       },
     })
 

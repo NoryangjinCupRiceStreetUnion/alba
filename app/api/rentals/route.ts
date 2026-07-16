@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { Prisma, RentalStatus } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 // POST /api/rentals - 대여 요청
@@ -92,15 +93,19 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const role = (searchParams.get("role") as "borrower" | "owner") ?? "borrower"
-    const status = searchParams.get("status") as string | null
+    const status = searchParams.get("status")
     const cursor = searchParams.get("cursor") ?? undefined
     const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50)
 
-    const where = {
+    if (status && !Object.values(RentalStatus).includes(status as RentalStatus)) {
+      return NextResponse.json({ error: { code: "INVALID_STATUS", message: "지원하지 않는 대여 상태입니다." } }, { status: 400 })
+    }
+
+    const where: Prisma.RentalWhereInput = {
       ...(role === "borrower"
         ? { borrowerId: session.user.id }
         : { item: { ownerId: session.user.id } }),
-      ...(status && { status: status as any }),
+      ...(status && { status: status as RentalStatus }),
     }
 
     const rentals = await prisma.rental.findMany({
