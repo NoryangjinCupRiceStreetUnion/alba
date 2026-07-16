@@ -1,37 +1,90 @@
-// import "./globals.css"
-import { auth, signOut } from "@/auth"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-// 필요한 경우 LoginBtn, ModeToggle 컴포넌트도 import 해야 합니다.
 
-export default async function RootLayout({ // 1. async 추가
-    children,
-}: Readonly<{
-    children?: React.ReactNode
-}>) {
-    // 2. await 추가
-    const session = await auth()
-    const user = session?.user
-
+export default function Footer() {
     return (
-        // 3. 최상위 레이아웃이라면 html, body 태그 필수
-        <html lang="ko">
-            <body>
-                <div className="px-6 py-2 pt-3 bg-gray-black">
-                    <div className="flex items-center text-sm justify-between">
-                        <div className="flex-1 flex items-center">
-                            <img className="h-3 mr-1.5" src="/geekslogo.webp" alt="logo" />
-                            참가자 강의 시스템
-                            <a className="ml-5" href="/study">강의 목록</a>
+        <footer className="w-full border-t border-border/40 bg-card py-12 text-muted-foreground transition-all duration-300">
+            <div className="mx-auto max-w-7xl px-6">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+                    {/* Brand Section */}
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-2">
+                            <img src="/logo.png" alt="logo" className="h-6" />
+                        </div>
+                        <p className="text-xs leading-relaxed max-w-xs">
+                            동작구 노량진 이웃들과 함께하는 쉽고 안전한 공유 대여 플랫폼. 안 쓰는 물건으로 소소한 수익을 얻고, 필요한 물건은 저렴하게 빌려 써보세요.
+                        </p>
+                    </div>
+
+
+                    {/* Links Section 1 */}
+                    <div>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4">서비스</h4>
+                        <ul className="space-y-2.5 text-xs">
+                            <li>
+                                <Link href="/" className="hover:text-foreground transition-colors">
+                                    물건 탐색하기
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/upload" className="hover:text-foreground transition-colors">
+                                    대여 물건 등록
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/test" className="hover:text-foreground transition-colors">
+                                    전체 수강현황
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Links Section 2 */}
+                    <div>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4">로컬 정보</h4>
+                        <ul className="space-y-2.5 text-xs">
+                            <li>
+                                <span className="hover:text-foreground transition-colors cursor-pointer">
+                                    동작구 컵밥거리 상인연합회
+                                </span>
+                            </li>
+                            <li>
+                                <span className="hover:text-foreground transition-colors cursor-pointer">
+                                    노량진1동 주민센터 연계
+                                </span>
+                            </li>
+                            <li>
+                                <span className="hover:text-foreground transition-colors cursor-pointer">
+                                    동작 청년 공유 네트워크
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Stats & Info Section */}
+                    <div className="flex flex-col gap-4 text-xs">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">서비스 통계</h4>
+                        <div className="flex flex-col gap-2 rounded-xl bg-accent/40 border border-border/40 p-3">
+                            <div className="flex justify-between">
+                                <span className="text-[10px]">노량진동 누적 대여</span>
+                                <span className="font-bold text-foreground">1,240 건</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-[10px]">현재 공유중인 물건</span>
+                                <span className="font-bold text-foreground">412 개</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 4. 하위 페이지 렌더링을 위해 children 반드시 추가 */}
-                <main>
-                    {children}
-                </main>
-            </body>
-        </html>
+                <div className="mt-12 border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px]">
+                    <span>&copy; {new Date().getFullYear()} Noryangjin Cup-Rice Street Union. All rights reserved.</span>
+                    <div className="flex gap-4">
+                        <span className="hover:text-foreground cursor-pointer transition-colors">이용약관</span>
+                        <span className="hover:text-foreground cursor-pointer transition-colors">개인정보처리방침</span>
+                        <span className="hover:text-foreground cursor-pointer transition-colors">고객 피드백</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
     )
 }
