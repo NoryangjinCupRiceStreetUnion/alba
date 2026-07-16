@@ -1,18 +1,19 @@
-import { Button } from "@/components/ui/button"
+"use client";
+
+import InOutAnimation from '@/components/InOutAnimation';
+import css from './page.module.css';
 
 export default function Page() {
     return (
-        <div className="flex min-h-svh p-6">
-            <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-                <div>
-                    <h1 className="font-medium">Project ready!</h1>
-                    <p>You may now add components and start building.</p>
-                    <p>We&apos;ve already added the button component for you.</p>
-                    <Button className="mt-2">Button</Button>
-                </div>
-                <div className="font-mono text-xs text-muted-foreground">
-                    (Press <kbd>d</kbd> to toggle dark mode)
-                </div>
+        <div className={css.container}>
+            <div className={css.hero}>
+                <InOutAnimation animate className={css.header}>
+                    <span>잠시 쉬고 있는 물건,&nbsp;</span>
+                    <span style={{ "color": "#005a8a" }}>필요한 사람에게.</span>
+                </InOutAnimation>
+            </div>
+            <div className={css.hero}>
+                
             </div>
         </div>
     )
