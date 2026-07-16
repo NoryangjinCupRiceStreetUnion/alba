@@ -56,6 +56,7 @@ export default function UploadPage() {
         const reader = new FileReader()
         reader.onloadend = () => {
           if (typeof reader.result === "string") {
+            //@ts-ignore
             setImages((prev) => [...prev, reader.result])
           }
         }
@@ -145,7 +146,7 @@ export default function UploadPage() {
       <div className="flex min-h-[80vh] flex-col items-center justify-center px-4 bg-background text-foreground transition-all duration-300">
         <div className="absolute top-20 left-[10%] -z-10 h-96 w-96 rounded-full bg-indigo-500/10 opacity-60 blur-[120px] dark:bg-indigo-500/5" />
         <div className="z-10 w-full max-w-md rounded-3xl border border-border/80 bg-card p-8 shadow-xl text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 mb-4">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xs bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 mb-4">
             <Info className="h-6 w-6" />
           </div>
           <h2 className="text-xl font-bold tracking-tight">로그인이 필요합니다</h2>
@@ -153,7 +154,7 @@ export default function UploadPage() {
             대여 물건을 등록하시려면 먼저 회원가입 및 로그인을 완료해 주세요. 컵밥거리 이웃들이 기다리고 있습니다.
           </p>
           <Link href="/login" className="mt-6 block">
-            <Button className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11">
+            <Button className="w-full rounded-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11">
               로그인 하러가기
             </Button>
           </Link>
@@ -182,14 +183,14 @@ export default function UploadPage() {
             </p>
 
             {/* Created card mockup */}
-            <div className="my-8 max-w-sm mx-auto rounded-2xl border border-border bg-background p-4 text-left shadow-md flex items-center gap-4">
+            <div className="my-8 max-w-sm mx-auto rounded-xs border border-border bg-background p-4 text-left shadow-md flex items-center gap-4">
               <Image
                 src={images[0]}
                 alt="preview"
                 width={80}
                 height={80}
                 unoptimized
-                className="w-20 h-20 rounded-xl object-cover bg-accent"
+                className="w-20 h-20 rounded-xs object-cover bg-accent"
               />
               <div className="flex-1 min-w-0">
                 <span className="inline-block text-[9px] font-bold text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded mb-1">
@@ -205,13 +206,13 @@ export default function UploadPage() {
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               {createdItemId && (
                 <Link href={`/item/${createdItemId}`}>
-                  <Button className="w-full sm:w-auto px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11 shadow-md shadow-indigo-600/15">
+                  <Button className="w-full sm:w-auto px-6 rounded-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11 shadow-md shadow-indigo-600/15">
                     등록한 물건 보기
                   </Button>
                 </Link>
               )}
               <Link href="/">
-                <Button variant="outline" className="w-full sm:w-auto px-6 rounded-xl font-bold h-11">
+                <Button variant="outline" className="w-full sm:w-auto px-6 rounded-xs font-bold h-11">
                   목록으로 가기
                 </Button>
               </Link>
@@ -229,7 +230,7 @@ export default function UploadPage() {
                   setCreatedItemId(null)
                   setIsSuccess(false)
                 }}
-                className="w-full sm:w-auto px-6 rounded-xl border border-border text-sm font-semibold hover:bg-accent h-11 transition-colors"
+                className="w-full sm:w-auto px-6 rounded-xs border border-border text-sm font-semibold hover:bg-accent h-11 transition-colors"
               >
                 추가 등록하기
               </button>
@@ -257,7 +258,7 @@ export default function UploadPage() {
                 
                 <div className="flex flex-wrap gap-3">
                   {images.map((img, index) => (
-                    <div key={index} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border bg-accent">
+                    <div key={index} className="relative w-20 h-20 rounded-xs overflow-hidden border border-border bg-accent">
                       <Image
                         src={img}
                         alt={`upload-${index}`}
@@ -282,7 +283,7 @@ export default function UploadPage() {
                   ))}
 
                   {images.length < 5 && (
-                    <label className="relative flex flex-col items-center justify-center w-20 h-20 rounded-xl border-2 border-dashed border-border/80 bg-background/50 hover:bg-accent/40 cursor-pointer transition-all hover:border-indigo-500/50">
+                    <label className="relative flex flex-col items-center justify-center w-20 h-20 rounded-xs border-2 border-dashed border-border/80 bg-background/50 hover:bg-accent/40 cursor-pointer transition-all hover:border-indigo-500/50">
                       <Camera className="h-5 w-5 text-muted-foreground" />
                       <span className="text-[9px] text-muted-foreground mt-1 font-semibold">사진 추가</span>
                       <input
@@ -315,7 +316,7 @@ export default function UploadPage() {
                     placeholder="예: 아이패드 프로 M2 (11인치, 2세대 펜슬 포함)"
                     value={name}
                     onChange={(e) => setName(e.target.value.slice(0, 60))}
-                    className="h-11 w-full rounded-xl border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
+                    className="h-11 w-full rounded-xs border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
                   />
                   {errors.name && <p className="text-xs text-rose-500 font-semibold mt-0.5">{errors.name}</p>}
                 </div>
@@ -327,7 +328,7 @@ export default function UploadPage() {
                       id="item-category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value as typeof category)}
-                      className="h-11 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-indigo-600 focus:outline-none"
+                      className="h-11 w-full rounded-xs border border-border bg-background px-3 text-xs focus:border-indigo-600 focus:outline-none"
                     >
                       <option value="DEVICES">IT/디바이스</option>
                       <option value="TOOLS">생활/공구</option>
@@ -346,7 +347,7 @@ export default function UploadPage() {
                       placeholder="예: 서울 동작구 노량진동"
                       value={region}
                       onChange={(e) => setRegion(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
+                      className="h-11 w-full rounded-xs border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
                     />
                   </div>
                 </div>
@@ -357,7 +358,7 @@ export default function UploadPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-extrabold text-foreground pl-1">거래 가능 방식</label>
-                    <div className="grid grid-cols-2 gap-2 bg-background p-1 rounded-xl border border-border">
+                    <div className="grid grid-cols-2 gap-2 bg-background p-1 rounded-xs border border-border">
                       <button
                         type="button"
                         onClick={() => setTradeMethod("MEET")}
@@ -391,7 +392,7 @@ export default function UploadPage() {
                       placeholder="예: 노량진역 3번 출구 또는 메가스터디 로비"
                       value={locationDetail}
                       onChange={(e) => setLocationDetail(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
+                      className="h-11 w-full rounded-xs border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
                     />
                   </div>
                 </div>
@@ -407,7 +408,7 @@ export default function UploadPage() {
                         value={availableFrom}
                         onChange={(e) => setAvailableFrom(e.target.value)}
                         min={new Date().toISOString().split("T")[0]}
-                        className="h-11 w-full rounded-xl border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none"
+                        className="h-11 w-full rounded-xs border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none"
                       />
                     </div>
                     {errors.availableFrom && <p className="text-xs text-rose-500 font-semibold pl-1 mt-0.5">{errors.availableFrom}</p>}
@@ -423,7 +424,7 @@ export default function UploadPage() {
                         value={availableUntil}
                         onChange={(e) => setAvailableUntil(e.target.value)}
                         min={availableFrom || new Date().toISOString().split("T")[0]}
-                        className="h-11 w-full rounded-xl border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none"
+                        className="h-11 w-full rounded-xs border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none"
                       />
                     </div>
                     {errors.availableUntil && <p className="text-xs text-rose-500 font-semibold pl-1 mt-0.5">{errors.availableUntil}</p>}
@@ -442,7 +443,7 @@ export default function UploadPage() {
                     placeholder="예: 2000"
                     value={dailyPrice}
                     onChange={(e) => setDailyPrice(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
+                    className="h-11 w-full rounded-xs border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
                   />
                   {errors.dailyPrice && <p className="text-xs text-rose-500 font-semibold pl-1 mt-0.5">{errors.dailyPrice}</p>}
                 </div>
@@ -472,7 +473,7 @@ export default function UploadPage() {
                         placeholder="예: 10000 (하루당 1,420원 꼴, 할인 효과)"
                         value={weeklyPrice}
                         onChange={(e) => setWeeklyPrice(e.target.value)}
-                        className="h-11 w-full rounded-xl border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
+                        className="h-11 w-full rounded-xs border border-border bg-background px-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60"
                       />
                       {errors.weeklyPrice && <p className="text-xs text-rose-500 font-semibold pl-1 mt-0.5">{errors.weeklyPrice}</p>}
                     </div>
@@ -494,7 +495,7 @@ export default function UploadPage() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value.slice(0, 2000))}
                     rows={6}
-                    className="w-full rounded-xl border border-border bg-background p-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60 resize-none leading-relaxed"
+                    className="w-full rounded-xs border border-border bg-background p-4 text-xs focus:border-indigo-600 focus:outline-none placeholder:text-muted-foreground/60 resize-none leading-relaxed"
                   />
                   {errors.description && <p className="text-xs text-rose-500 font-semibold pl-1 mt-0.5">{errors.description}</p>}
                 </div>
@@ -508,7 +509,7 @@ export default function UploadPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold tracking-wide shadow-lg shadow-indigo-600/15"
+                className="w-full h-12 rounded-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold tracking-wide shadow-lg shadow-indigo-600/15"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">

@@ -197,7 +197,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
       {/* 헤더 */}
       <div className="flex items-center gap-3">
         <Link href="/chat">
-          <Button variant="ghost" size="icon" className="rounded-xl">
+          <Button variant="ghost" size="icon" className="rounded-xs">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
@@ -205,7 +205,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
           {thumbnail && (
             // Item images may be Data URLs or user-provided remote URLs.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbnail} alt="" className="h-10 w-10 rounded-xl object-cover border border-border/40 shrink-0" />
+            <img src={thumbnail} alt="" className="h-10 w-10 rounded-xs object-cover border border-border/40 shrink-0" />
           )}
           <div className="min-w-0">
             <p className="text-sm font-bold truncate">{chat?.item?.name ?? "채팅방"}</p>
@@ -223,7 +223,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
 
       {/* 대여 정보 + 상태 변경 버튼 */}
       {chat?.rental && (
-        <Card className="rounded-2xl border border-border/40 bg-card/60">
+        <Card className="rounded-xs border border-border/40 bg-card/60">
           <CardContent className="p-4">
             <div className="text-xs text-muted-foreground space-y-1">
               <div className="flex justify-between">
@@ -246,7 +246,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
               <div className="flex gap-2 mt-4">
                 <Button
                   size="sm"
-                  className="flex-1 rounded-xl"
+                  className="flex-1 rounded-xs"
                   onClick={() => changeRentalStatus("APPROVED")}
                 >
                   대여 승인
@@ -254,7 +254,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
                 <Button
                   size="sm"
                   variant="destructive"
-                  className="flex-1 rounded-xl"
+                  className="flex-1 rounded-xs"
                   onClick={() => changeRentalStatus("REJECTED")}
                 >
                   거절
@@ -262,12 +262,12 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
               </div>
             )}
             {isOwner && rentalStatus === "APPROVED" && (
-              <Button size="sm" className="w-full mt-4 rounded-xl" onClick={() => changeRentalStatus("BORROWED")}>
+              <Button size="sm" className="w-full mt-4 rounded-xs" onClick={() => changeRentalStatus("BORROWED")}>
                 대여 시작 확인
               </Button>
             )}
             {isOwner && rentalStatus === "BORROWED" && (
-              <Button size="sm" className="w-full mt-4 rounded-xl" onClick={() => changeRentalStatus("RETURNED")}>
+              <Button size="sm" className="w-full mt-4 rounded-xs" onClick={() => changeRentalStatus("RETURNED")}>
                 반납 완료 처리
               </Button>
             )}
@@ -276,7 +276,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
               <Button
                 size="sm"
                 variant="outline"
-                className="w-full mt-4 rounded-xl"
+                className="w-full mt-4 rounded-xs"
                 onClick={() => changeRentalStatus("CANCELED")}
               >
                 대여 취소
@@ -287,7 +287,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
       )}
 
       {/* 메시지 영역 */}
-      <ScrollArea className="flex-1 h-[50vh] rounded-2xl border border-border/40 bg-card/30 p-4">
+      <ScrollArea className="flex-1 h-[50vh] rounded-xs border border-border/40 bg-card/30 p-4">
         <div className="flex flex-col gap-3">
           {messages.length === 0 && (
             <p className="text-center text-xs text-muted-foreground py-8">
@@ -316,7 +316,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
                     <span className="text-[10px] text-muted-foreground font-semibold pl-1">{senderName}</span>
                   )}
                   <div
-                    className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
+                    className={`px-4 py-2.5 rounded-xs text-sm leading-relaxed break-words ${
                       isMine
                         ? "bg-primary text-primary-foreground rounded-br-sm"
                         : "bg-accent text-foreground rounded-bl-sm"
@@ -341,14 +341,14 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="메시지를 입력하세요..."
-          className="flex-1 rounded-xl bg-background"
+          className="flex-1 rounded-xs bg-background"
           disabled={sending}
         />
         <Button
           aria-label="메시지 보내기"
           type="submit"
           size="icon"
-          className="rounded-xl shrink-0"
+          className="rounded-xs shrink-0"
           disabled={!input.trim() || sending}
         >
           <Send className="h-4 w-4" />

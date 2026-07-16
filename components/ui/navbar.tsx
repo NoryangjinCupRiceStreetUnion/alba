@@ -49,7 +49,7 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-3">
               {/* 신뢰 배터리 */}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-accent/40 border border-border/40 text-xs">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xs bg-accent/40 border border-border/40 text-xs">
                 <span className="text-muted-foreground font-semibold">신뢰 배터리</span>
                 <BatteryProgress percentage={user.trustBattery} />
               </div>
@@ -58,9 +58,9 @@ export default function Navbar() {
                 {user.image ? (
                   // Profile images can come from arbitrary authentication providers.
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.image} alt="profile" className="h-8 w-8 rounded-xl object-cover ring-2 ring-primary/20" />
+                  <img src={user.image} alt="profile" className="h-8 w-8 rounded-xs object-cover ring-2 ring-primary/20" />
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 font-bold text-primary border border-primary/20 text-sm">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xs bg-primary/10 font-bold text-primary border border-primary/20 text-sm">
                     {user.name ? user.name[0] : user.email ? user.email[0].toUpperCase() : "U"}
                   </div>
                 )}
@@ -78,7 +78,7 @@ export default function Navbar() {
             </div>
           ) : (
             <Link href="/login">
-              <Button variant="default" size="sm" className="rounded-xl">
+              <Button variant="default" size="sm" className="rounded-xs">
                 시작하기
               </Button>
             </Link>
@@ -89,7 +89,7 @@ export default function Navbar() {
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-xl"
+            className="rounded-xs"
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>

@@ -42,7 +42,7 @@ export default function LoginPage() {
 
       <div className="z-10 w-full max-w-md rounded-3xl border border-white/[0.08] bg-white/[0.02] p-8 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-white/[0.12]">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
             <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
@@ -56,7 +56,7 @@ export default function LoginPage() {
           <button
             onClick={() => handleLogin("google")}
             disabled={loadingProvider !== null}
-            className="group relative flex h-12 w-full items-center justify-center rounded-xl bg-white px-4 text-sm font-semibold text-gray-900 transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-md cursor-pointer"
+            className="group relative flex h-12 w-full items-center justify-center rounded-xs bg-white px-4 text-sm font-semibold text-gray-900 transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-md cursor-pointer"
           >
             {loadingProvider === "google" ? (
               <span className="flex items-center gap-2">
@@ -83,7 +83,7 @@ export default function LoginPage() {
           <button
             onClick={() => handleLogin("kakao")}
             disabled={loadingProvider !== null}
-            className="group relative flex h-12 w-full items-center justify-center rounded-xl bg-[#FEE500] px-4 text-sm font-semibold text-[#191919] transition-all duration-200 hover:bg-[#FEE500]/95 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-md cursor-pointer"
+            className="group relative flex h-12 w-full items-center justify-center rounded-xs bg-[#FEE500] px-4 text-sm font-semibold text-[#191919] transition-all duration-200 hover:bg-[#FEE500]/95 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-md cursor-pointer"
           >
             {loadingProvider === "kakao" ? (
               <span className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export default function LoginPage() {
           <button
             onClick={() => handleLogin("naver")}
             disabled={loadingProvider !== null}
-            className="group relative flex h-12 w-full items-center justify-center rounded-xl bg-[#03C75A] px-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#03C75A]/95 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-md hover:shadow-[#03C75A]/20 hover:shadow-lg cursor-pointer"
+            className="group relative flex h-12 w-full items-center justify-center rounded-xs bg-[#03C75A] px-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#03C75A]/95 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-md hover:shadow-[#03C75A]/20 hover:shadow-lg cursor-pointer"
           >
             {loadingProvider === "naver" ? (
               <span className="flex items-center gap-2">
@@ -145,7 +145,7 @@ export default function LoginPage() {
               placeholder="홍길동"
               value={testName}
               onChange={(e) => setTestName(e.target.value)}
-              className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 text-sm transition-all focus:border-indigo-500 focus:outline-none placeholder:text-gray-600"
+              className="h-11 w-full rounded-xs border border-white/[0.08] bg-white/[0.03] px-3.5 text-sm transition-all focus:border-indigo-500 focus:outline-none placeholder:text-gray-600"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -157,13 +157,13 @@ export default function LoginPage() {
               placeholder="test@example.com"
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
-              className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 text-sm transition-all focus:border-indigo-500 focus:outline-none placeholder:text-gray-600"
+              className="h-11 w-full rounded-xs border border-white/[0.08] bg-white/[0.03] px-3.5 text-sm transition-all focus:border-indigo-500 focus:outline-none placeholder:text-gray-600"
             />
           </div>
           <button
             type="submit"
             disabled={loadingProvider !== null || !testEmail}
-            className="group relative flex h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-500 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-md shadow-indigo-600/10 cursor-pointer"
+            className="group relative flex h-11 w-full items-center justify-center rounded-xs bg-indigo-600 px-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-500 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-md shadow-indigo-600/10 cursor-pointer"
           >
             {loadingProvider === "credentials" ? (
               <span className="flex items-center gap-2">

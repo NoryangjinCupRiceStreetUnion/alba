@@ -107,7 +107,7 @@ export default function Page() {
         <div className="mx-auto mt-10 max-w-2xl">
           <div className="relative group">
             <div className="absolute" />
-            <div className="relative flex items-center rounded-2xl border border-border/80 bg-card px-4 py-2 shadow-lg">
+            <div className="relative flex items-center rounded-xs border border-border/80 bg-card px-4 py-2 shadow-lg">
               <Search className="mr-3 h-5 w-5 text-muted-foreground" />
               <Input
                 value={query}
@@ -131,7 +131,7 @@ export default function Page() {
           <Card className="border-indigo-500/20 bg-indigo-500/5">
             <CardContent className="flex h-full flex-col justify-between p-6">
               <div>
-                <div className="mb-4 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-500">
+                <div className="mb-4 inline-flex h-8 w-8 items-center justify-center rounded-xs bg-indigo-500/15 text-indigo-500">
                   <PackageOpen className="h-4 w-4" />
                 </div>
                 <h3 className="text-base font-bold">내 물건도 바로 올리기</h3>
@@ -141,10 +141,10 @@ export default function Page() {
               </div>
               <div className="mt-6 flex gap-2">
                 <Link href="/upload" className="flex-1">
-                  <Button className="w-full rounded-xl bg-indigo-600 text-white hover:bg-indigo-500">등록하기</Button>
+                  <Button className="w-full rounded-xs bg-indigo-600 text-white hover:bg-indigo-500">등록하기</Button>
                 </Link>
                 <Link href="/chat" className="flex-1">
-                  <Button variant="outline" className="w-full rounded-xl">
+                  <Button variant="outline" className="w-full rounded-xs">
                     <MessageCircle className="mr-2 h-4 w-4" /> 채팅
                   </Button>
                 </Link>
@@ -198,7 +198,7 @@ export default function Page() {
         </div>
 
         {showFilters ? (
-          <div className="mb-8 grid gap-6 rounded-2xl border border-border/80 bg-card p-5 md:grid-cols-2">
+          <div className="mb-8 grid gap-6 rounded-xs border border-border/80 bg-card p-5 md:grid-cols-2">
             <div>
               <h4 className="mb-2 text-xs font-bold uppercase tracking-wider">거래 방식</h4>
               <div className="flex gap-2">
@@ -239,7 +239,7 @@ export default function Page() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => (
-              <Link key={item.id} href={`/item/${item.id}`} className="group overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5">
+              <Link key={item.id} href={`/item/${item.id}`} className="group overflow-hidden rounded-xs border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5">
                 <div className="relative aspect-video overflow-hidden bg-accent/30">
                   {item.images?.[0]?.url ? (
                     // Item images may be Data URLs or user-provided remote URLs.

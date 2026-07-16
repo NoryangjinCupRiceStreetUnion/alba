@@ -47,7 +47,7 @@ export default async function ChatListPage() {
 
       {chats.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent">
+          <div className="flex h-16 w-16 items-center justify-center rounded-xs bg-accent">
             <MessageCircle className="h-8 w-8 text-muted-foreground" />
           </div>
           <p className="text-muted-foreground text-sm">아직 채팅이 없습니다.</p>
@@ -69,7 +69,7 @@ export default async function ChatListPage() {
               <div key={chat.id}>
                 {i > 0 && <Separator className="my-1" />}
                 <Link href={`/chat/${chat.id}`}>
-                  <Card className="border-0 shadow-none hover:bg-accent/40 transition-colors cursor-pointer rounded-2xl">
+                  <Card className="border-0 shadow-none hover:bg-accent/40 transition-colors cursor-pointer rounded-xs">
                     <CardContent className="flex items-center gap-4 p-4">
                       {/* 물건 썸네일 */}
                       <div className="relative shrink-0">
@@ -79,10 +79,10 @@ export default async function ChatListPage() {
                           <img
                             src={thumbnail}
                             alt={chat.item?.name}
-                            className="h-14 w-14 rounded-xl object-cover border border-border/40"
+                            className="h-14 w-14 rounded-xs object-cover border border-border/40"
                           />
                         ) : (
-                          <div className="h-14 w-14 rounded-xl bg-accent flex items-center justify-center">
+                          <div className="h-14 w-14 rounded-xs bg-accent flex items-center justify-center">
                             <MessageCircle className="h-6 w-6 text-muted-foreground" />
                           </div>
                         )}

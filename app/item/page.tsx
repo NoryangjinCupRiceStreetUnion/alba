@@ -30,7 +30,7 @@ export default async function Page() {
             <Link
               key={item.id}
               href={`/item/${item.id}`}
-              className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
+              className="rounded-xs border bg-card p-4 text-card-foreground shadow-sm"
             >
               <h2 className="text-lg font-medium">{item.name}</h2>
               <p className="mt-2 text-sm text-muted-foreground">
