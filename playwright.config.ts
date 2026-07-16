@@ -20,7 +20,12 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: `npm run build && npm run start -- -p ${port}`,
+    command: "npm run build && npm run start",
+    env: {
+      PORT: String(port),
+      HOSTNAME: "localhost",
+      NODE_ENV: "production",
+    },
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { ArrowLeft, Send } from "lucide-react"
+import { io, Socket } from "socket.io-client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -58,8 +59,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const lastTimestampRef = useRef<string | null>(null)
-  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const socketRef = useRef<Socket | null>(null)
 
   // 채팅 정보 로드
   useEffect(() => {
@@ -83,9 +83,6 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
         if (res.ok) {
           const { data } = await res.json()
           setMessages(data ?? [])
-          if (data?.length > 0) {
-            lastTimestampRef.current = data[data.length - 1].createdAt
-          }
         }
       } catch {} finally {
         setLoading(false)
@@ -94,26 +91,27 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
     loadMessages()
   }, [chatId])
 
-  // 폴링 (3초마다 새 메시지 확인)
   useEffect(() => {
-    pollingRef.current = setInterval(async () => {
-      try {
-        const url = lastTimestampRef.current
-          ? `/api/chats/${chatId}/messages?after=${encodeURIComponent(lastTimestampRef.current)}`
-          : `/api/chats/${chatId}/messages`
-        const res = await fetch(url)
-        if (res.ok) {
-          const { data } = await res.json()
-          if (data && data.length > 0) {
-            setMessages((prev) => [...prev, ...data])
-            lastTimestampRef.current = data[data.length - 1].createdAt
-          }
+    const socket = io({ path: "/socket.io", transports: ["websocket", "polling"] })
+    socketRef.current = socket
+
+    socket.on("connect", () => {
+      socket.emit("join-chat", chatId)
+    })
+
+    socket.on("new-message", (message: Message) => {
+      setMessages((prev) => {
+        if (prev.some((item) => item.id === message.id)) {
+          return prev
         }
-      } catch {}
-    }, 3000)
+        return [...prev, message]
+      })
+    })
 
     return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current)
+      socket.emit("leave-chat", chatId)
+      socket.disconnect()
+      socketRef.current = null
     }
   }, [chatId])
 
@@ -134,14 +132,20 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
         body: JSON.stringify({ content: input.trim() }),
       })
 
-      if (res.ok) {
-        const { data } = await res.json()
-        setMessages((prev) => [...prev, data])
-        lastTimestampRef.current = data.createdAt
-        setInput("")
-      } else {
-        toast.error("메시지 전송에 실패했습니다.")
+      if (!res.ok) {
+        throw new Error("send failed")
       }
+
+      const { data } = await res.json()
+      setMessages((prev) => {
+        if (prev.some((item) => item.id === data.id)) {
+          return prev
+        }
+        return [...prev, data]
+      })
+      setInput("")
+
+      socketRef.current?.emit("send-message", { chatId, message: data })
     } catch {
       toast.error("메시지 전송에 실패했습니다.")
     } finally {

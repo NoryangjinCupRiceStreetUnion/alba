@@ -1,68 +1,155 @@
+import { Prisma, RentalStatus } from "@prisma/client"
+
 import { auth } from "@/auth"
+import {
+  dataResponse,
+  errorResponse,
+  internalError,
+  isPrismaError,
+  validationError,
+} from "@/lib/api"
+import {
+  BLOCKING_RENTAL_STATUSES,
+  incrementDailyMetric,
+  overlapsRentalPeriod,
+} from "@/lib/marketplace"
 import { prisma } from "@/lib/prisma"
-import { RentalStatus } from "@prisma/client"
-import { NextRequest, NextResponse } from "next/server"
+import { rentalStatusSchema } from "@/lib/validation"
 
-// PATCH /api/rentals/:rentalId/status
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ rentalId: string }> }) {
+type Context = { params: Promise<{ rentalId: string }> }
+
+export async function PATCH(request: Request, { params }: Context) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "로그인이 필요합니다." } }, { status: 401 })
-    }
-
     const { rentalId } = await params
-    const { status } = await req.json()
-    if (typeof status !== "string" || !Object.values(RentalStatus).includes(status as RentalStatus)) {
-      return NextResponse.json({ error: { code: "INVALID_STATUS", message: "지원하지 않는 대여 상태입니다." } }, { status: 400 })
-    }
-    const newStatus = status as RentalStatus
-    const userId = session.user.id
+    const session = await auth()
+    const userId = session?.user?.id
 
-    const rental = await prisma.rental.findUnique({
-      where: { id: rentalId },
-      include: { item: true },
-    })
-
-    if (!rental) {
-      return NextResponse.json({ error: { code: "RENTAL_NOT_FOUND", message: "대여를 찾을 수 없습니다." } }, { status: 404 })
+    if (!userId) {
+      return errorResponse("UNAUTHORIZED", "로그인이 필요합니다.", 401)
     }
 
-    const isOwner = rental.item.ownerId === userId
-    const isBorrower = rental.borrowerId === userId
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return errorResponse("INVALID_JSON", "JSON 본문이 필요합니다.", 400)
+    }
+    const parsed = rentalStatusSchema.safeParse(body)
+    if (!parsed.success) return validationError(parsed.error)
+    const nextStatus = parsed.data.status
 
-    if (!isOwner && !isBorrower) {
-      return NextResponse.json({ error: { code: "FORBIDDEN", message: "권한이 없습니다." } }, { status: 403 })
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const rental = await tx.rental.findUnique({
+          where: { id: rentalId },
+          include: { item: true },
+        })
+        if (!rental) return { error: "RENTAL_NOT_FOUND" as const }
+
+        const isOwner = rental.item.ownerId === userId
+        const isBorrower = rental.borrowerId === userId
+        if (!isOwner && !isBorrower) return { error: "FORBIDDEN" as const }
+
+        const allowed =
+          (rental.status === RentalStatus.REQUESTED &&
+            nextStatus === RentalStatus.APPROVED &&
+            isOwner) ||
+          (rental.status === RentalStatus.REQUESTED &&
+            nextStatus === RentalStatus.REJECTED &&
+            isOwner) ||
+          (rental.status === RentalStatus.REQUESTED &&
+            nextStatus === RentalStatus.CANCELED &&
+            isBorrower) ||
+          (rental.status === RentalStatus.APPROVED &&
+            nextStatus === RentalStatus.CANCELED) ||
+          (rental.status === RentalStatus.APPROVED &&
+            nextStatus === RentalStatus.BORROWED &&
+            isOwner) ||
+          (rental.status === RentalStatus.BORROWED &&
+            nextStatus === RentalStatus.RETURNED &&
+            isOwner)
+
+        if (!allowed) return { error: "INVALID_STATUS_TRANSITION" as const }
+
+        if (nextStatus === RentalStatus.APPROVED) {
+          const conflict = await tx.rental.findFirst({
+            where: {
+              id: { not: rental.id },
+              itemId: rental.itemId,
+              status: { in: [...BLOCKING_RENTAL_STATUSES] },
+              ...overlapsRentalPeriod(rental.startAt, rental.endAt),
+            },
+            select: { id: true },
+          })
+          if (conflict) return { error: "RENTAL_PERIOD_CONFLICT" as const }
+        }
+
+        const updated = await tx.rental.update({
+          where: { id: rental.id },
+          data: { status: nextStatus },
+          include: {
+            item: {
+              include: { images: { orderBy: { order: "asc" }, take: 1 } },
+            },
+            borrower: {
+              select: {
+                id: true,
+                name: true,
+                nickname: true,
+                image: true,
+                trustBattery: true,
+              },
+            },
+          },
+        })
+
+        if (nextStatus === RentalStatus.APPROVED) {
+          await incrementDailyMetric(tx, rental.itemId, "rentalApprovedCount")
+        }
+
+        return { rental: updated }
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    )
+
+    if ("error" in result) {
+      if (result.error === "RENTAL_NOT_FOUND") {
+        return errorResponse(
+          "RENTAL_NOT_FOUND",
+          "대여 내역을 찾을 수 없습니다.",
+          404
+        )
+      }
+      if (result.error === "FORBIDDEN") {
+        return errorResponse(
+          "FORBIDDEN",
+          "거래 당사자만 변경할 수 있습니다.",
+          403
+        )
+      }
+      if (result.error === "RENTAL_PERIOD_CONFLICT") {
+        return errorResponse(
+          "RENTAL_PERIOD_CONFLICT",
+          "해당 기간에는 이미 승인된 대여가 있습니다.",
+          409
+        )
+      }
+      return errorResponse(
+        "INVALID_STATUS_TRANSITION",
+        "현재 상태에서는 요청한 상태로 변경할 수 없습니다.",
+        409
+      )
     }
 
-    // 상태 변경 권한 검사
-    const allowedTransitions: Record<string, { from: string; by: "owner" | "borrower" | "both" }> = {
-      APPROVED: { from: "REQUESTED", by: "owner" },
-      REJECTED: { from: "REQUESTED", by: "owner" },
-      BORROWED: { from: "APPROVED", by: "owner" },
-      RETURNED: { from: "BORROWED", by: "owner" },
-      CANCELED: { from: "REQUESTED|APPROVED", by: "both" },
+    return dataResponse(result.rental)
+  } catch (error) {
+    if (isPrismaError(error, "P2034")) {
+      return errorResponse(
+        "RENTAL_STATE_CONFLICT",
+        "동시에 변경된 대여 상태가 있습니다. 다시 시도해주세요.",
+        409
+      )
     }
-
-    const transition = allowedTransitions[newStatus]
-    if (!transition || !transition.from.split("|").includes(rental.status)) {
-      return NextResponse.json({ error: { code: "INVALID_STATUS_CHANGE", message: "잘못된 상태 변경입니다." } }, { status: 409 })
-    }
-    if (transition.by === "owner" && !isOwner) {
-      return NextResponse.json({ error: { code: "FORBIDDEN", message: "물건 소유자만 가능합니다." } }, { status: 403 })
-    }
-    if (transition.by === "borrower" && !isBorrower) {
-      return NextResponse.json({ error: { code: "FORBIDDEN", message: "대여자만 가능합니다." } }, { status: 403 })
-    }
-
-    const updated = await prisma.rental.update({
-      where: { id: rentalId },
-      data: { status: newStatus },
-    })
-
-    return NextResponse.json({ data: updated })
-  } catch (e) {
-    console.error(e)
-    return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." } }, { status: 500 })
+    return internalError(error)
   }
 }

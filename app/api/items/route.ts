@@ -1,154 +1,213 @@
+import { ItemStatus, Prisma, TradeMethod } from "@prisma/client"
+
 import { auth } from "@/auth"
+import {
+  dataResponse,
+  errorResponse,
+  internalError,
+  isPrismaError,
+  listResponse,
+  parseLimit,
+  validationError,
+} from "@/lib/api"
+import {
+  BLOCKING_RENTAL_STATUSES,
+  overlapsRentalPeriod,
+} from "@/lib/marketplace"
 import { prisma } from "@/lib/prisma"
-import { ItemCategory, TradeMethod } from "@prisma/client"
-import { NextRequest, NextResponse } from "next/server"
+import { availabilitySchema, itemCreateSchema } from "@/lib/validation"
 
-// GET /api/items - 물건 목록 조회
-export async function GET(req: NextRequest) {
+const SORT_VALUES = ["latest", "priceAsc", "priceDesc"] as const
+
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const q = searchParams.get("q") ?? undefined
-    const region = searchParams.get("region") ?? undefined
-    const tradeMethod = searchParams.get("tradeMethod") as "MEET" | "DELIVER" | null
-    const minPrice = searchParams.get("minPrice") ? parseInt(searchParams.get("minPrice")!) : undefined
-    const maxPrice = searchParams.get("maxPrice") ? parseInt(searchParams.get("maxPrice")!) : undefined
-    const sort = (searchParams.get("sort") as "latest" | "priceAsc" | "priceDesc") ?? "latest"
-    const cursor = searchParams.get("cursor") ?? undefined
-    const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50)
+    const { searchParams } = new URL(request.url)
+    const limit = parseLimit(searchParams.get("limit"))
+    const cursor = searchParams.get("cursor")
+    const q = searchParams.get("q")?.trim()
+    const region = searchParams.get("region")?.trim()
+    const ownerId = searchParams.get("ownerId")?.trim()
+    const tradeMethodValue = searchParams.get("tradeMethod")
+    const sortValue = searchParams.get("sort") ?? "latest"
 
-    const orderBy =
-      sort === "priceAsc"
-        ? { dailyPrice: "asc" as const }
-        : sort === "priceDesc"
-        ? { dailyPrice: "desc" as const }
-        : { createdAt: "desc" as const }
+    if (limit === null) {
+      return errorResponse(
+        "INVALID_LIMIT",
+        "limit은 1부터 50 사이의 정수여야 합니다.",
+        400
+      )
+    }
+
+    if (!SORT_VALUES.includes(sortValue as (typeof SORT_VALUES)[number])) {
+      return errorResponse(
+        "INVALID_SORT",
+        "지원하지 않는 정렬 방식입니다.",
+        400
+      )
+    }
+
+    if (
+      tradeMethodValue &&
+      !Object.values(TradeMethod).includes(tradeMethodValue as TradeMethod)
+    ) {
+      return errorResponse(
+        "INVALID_TRADE_METHOD",
+        "지원하지 않는 거래 방식입니다.",
+        400
+      )
+    }
+
+    const minPriceText = searchParams.get("minPrice")
+    const maxPriceText = searchParams.get("maxPrice")
+    const minPrice = minPriceText === null ? undefined : Number(minPriceText)
+    const maxPrice = maxPriceText === null ? undefined : Number(maxPriceText)
+
+    if (
+      (minPrice !== undefined &&
+        (!Number.isInteger(minPrice) || minPrice < 0)) ||
+      (maxPrice !== undefined &&
+        (!Number.isInteger(maxPrice) || maxPrice < 0)) ||
+      (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice)
+    ) {
+      return errorResponse(
+        "INVALID_PRICE_RANGE",
+        "가격 범위를 확인해주세요.",
+        400
+      )
+    }
+
+    const availableFrom = searchParams.get("availableFrom")
+    const availableUntil = searchParams.get("availableUntil")
+    let requestedPeriod: { startAt: Date; endAt: Date } | undefined
+
+    if (availableFrom !== null || availableUntil !== null) {
+      const parsed = availabilitySchema.safeParse({
+        startAt: availableFrom,
+        endAt: availableUntil,
+      })
+      if (!parsed.success) return validationError(parsed.error)
+      requestedPeriod = parsed.data
+    }
+
+    const where: Prisma.ItemWhereInput = {
+      status: ItemStatus.AVAILABLE,
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { description: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+      ...(region ? { region: { contains: region, mode: "insensitive" } } : {}),
+      ...(ownerId ? { ownerId } : {}),
+      ...(tradeMethodValue
+        ? { tradeMethod: tradeMethodValue as TradeMethod }
+        : {}),
+      ...(minPrice !== undefined || maxPrice !== undefined
+        ? { dailyPrice: { gte: minPrice, lte: maxPrice } }
+        : {}),
+      ...(requestedPeriod
+        ? {
+            availableFrom: { lte: requestedPeriod.startAt },
+            availableUntil: { gte: requestedPeriod.endAt },
+            rentals: {
+              none: {
+                status: { in: [...BLOCKING_RENTAL_STATUSES] },
+                ...overlapsRentalPeriod(
+                  requestedPeriod.startAt,
+                  requestedPeriod.endAt
+                ),
+              },
+            },
+          }
+        : {}),
+    }
+
+    const orderBy: Prisma.ItemOrderByWithRelationInput[] =
+      sortValue === "priceAsc"
+        ? [{ dailyPrice: "asc" }, { id: "asc" }]
+        : sortValue === "priceDesc"
+          ? [{ dailyPrice: "desc" }, { id: "desc" }]
+          : [{ createdAt: "desc" }, { id: "desc" }]
 
     const items = await prisma.item.findMany({
-      where: {
-        status: "AVAILABLE",
-        ...(q && {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { description: { contains: q, mode: "insensitive" } },
-          ],
-        }),
-        ...(region && { region: { contains: region } }),
-        ...(tradeMethod && { tradeMethod }),
-        ...(minPrice !== undefined && { dailyPrice: { gte: minPrice } }),
-        ...(maxPrice !== undefined && { dailyPrice: { lte: maxPrice } }),
-      },
+      where,
       orderBy,
       take: limit + 1,
-      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
         images: { orderBy: { order: "asc" }, take: 1 },
-        owner: { select: { id: true, name: true, nickname: true, image: true, trustBattery: true } },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            nickname: true,
+            image: true,
+            trustBattery: true,
+          },
+        },
       },
     })
 
     const hasNext = items.length > limit
-    const data = items.slice(0, limit).map((item) => ({
-      ...item,
-      thumbnailUrl: item.images[0]?.url ?? null,
-      images: undefined,
-    }))
+    const data = hasNext ? items.slice(0, limit) : items
 
-    return NextResponse.json({ data, nextCursor: hasNext ? data[data.length - 1]?.id : null, hasNext })
-  } catch (e) {
-    console.error(e)
-    return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." } }, { status: 500 })
+    return listResponse(data, {
+      hasNext,
+      nextCursor: hasNext ? (data.at(-1)?.id ?? null) : null,
+    })
+  } catch (error) {
+    if (isPrismaError(error, "P2025")) {
+      return errorResponse("INVALID_CURSOR", "유효하지 않은 cursor입니다.", 400)
+    }
+    return internalError(error)
   }
 }
 
-// POST /api/items - 물건 등록
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "로그인이 필요합니다." } }, { status: 401 })
+    const ownerId = session?.user?.id
+
+    if (!ownerId) {
+      return errorResponse("UNAUTHORIZED", "로그인이 필요합니다.", 401)
     }
 
-    const body = await req.json()
-    const {
-      name,
-      description,
-      category,
-      tradeMethod,
-      region,
-      locationDetail,
-      dailyPrice,
-      weeklyPrice,
-      availableFrom,
-      availableUntil,
-      images,
-    } = body
-
-    if (typeof name !== "string" || name.length < 2 || name.length > 60) {
-      return NextResponse.json({ error: { code: "INVALID_NAME", message: "물건 이름은 2~60자여야 합니다." } }, { status: 400 })
-    }
-    if (
-      !Array.isArray(images) ||
-      images.length < 1 ||
-      images.length > 5 ||
-      images.some((image) =>
-        typeof image !== "object" ||
-        image === null ||
-        typeof image.url !== "string" ||
-        !image.url ||
-        !Number.isInteger(image.order) ||
-        image.order < 0
-      )
-    ) {
-      return NextResponse.json({ error: { code: "INVALID_IMAGES", message: "이미지는 1~5개여야 합니다." } }, { status: 400 })
-    }
-    if (!Object.values(ItemCategory).includes(category as ItemCategory)) {
-      return NextResponse.json({ error: { code: "INVALID_CATEGORY", message: "지원하지 않는 카테고리입니다." } }, { status: 400 })
-    }
-    if (!Object.values(TradeMethod).includes(tradeMethod as TradeMethod)) {
-      return NextResponse.json({ error: { code: "INVALID_TRADE_METHOD", message: "지원하지 않는 거래 방식입니다." } }, { status: 400 })
-    }
-    if (typeof description !== "string" || description.length < 1 || description.length > 2000) {
-      return NextResponse.json({ error: { code: "INVALID_DESCRIPTION", message: "설명은 1~2,000자여야 합니다." } }, { status: 400 })
-    }
-    if (typeof region !== "string" || !region.trim()) {
-      return NextResponse.json({ error: { code: "INVALID_REGION", message: "대여 지역을 입력해주세요." } }, { status: 400 })
-    }
-    if (locationDetail != null && (typeof locationDetail !== "string" || locationDetail.length > 200)) {
-      return NextResponse.json({ error: { code: "INVALID_LOCATION_DETAIL", message: "상세 위치는 200자 이하여야 합니다." } }, { status: 400 })
-    }
-    if (!Number.isInteger(dailyPrice) || dailyPrice <= 0 || (weeklyPrice != null && (!Number.isInteger(weeklyPrice) || weeklyPrice <= 0))) {
-      return NextResponse.json({ error: { code: "INVALID_PRICE", message: "대여 요금을 확인해주세요." } }, { status: 400 })
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return errorResponse("INVALID_JSON", "JSON 본문이 필요합니다.", 400)
     }
 
-    const start = new Date(availableFrom)
-    const end = new Date(availableUntil)
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
-      return NextResponse.json({ error: { code: "INVALID_DATES", message: "대여 시작일이 종료일보다 빨라야 합니다." } }, { status: 400 })
-    }
+    const parsed = itemCreateSchema.safeParse(body)
+    if (!parsed.success) return validationError(parsed.error)
 
+    const { images, ...itemData } = parsed.data
     const item = await prisma.item.create({
       data: {
-        ownerId: session.user.id,
-        name,
-        description,
-        category: category as ItemCategory,
-        tradeMethod: tradeMethod as TradeMethod,
-        region: region.trim(),
-        locationDetail: typeof locationDetail === "string" && locationDetail.trim() ? locationDetail.trim() : null,
-        dailyPrice,
-        weeklyPrice: weeklyPrice ?? null,
-        availableFrom: start,
-        availableUntil: end,
-        images: {
-          create: images.map((img: { url: string; order: number }) => ({ url: img.url, order: img.order })),
+        ...itemData,
+        weeklyPrice: itemData.weeklyPrice ?? null,
+        ownerId,
+        images: { create: images },
+      },
+      include: {
+        images: { orderBy: { order: "asc" } },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            nickname: true,
+            image: true,
+            trustBattery: true,
+          },
         },
       },
-      include: { images: true },
     })
 
-    return NextResponse.json({ data: item }, { status: 201 })
-  } catch (e) {
-    console.error(e)
-    return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." } }, { status: 500 })
+    return dataResponse(item, { status: 201 })
+  } catch (error) {
+    return internalError(error)
   }
 }
