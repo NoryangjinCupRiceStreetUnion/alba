@@ -74,6 +74,8 @@ export default async function ChatListPage() {
                       {/* 물건 썸네일 */}
                       <div className="relative shrink-0">
                         {thumbnail ? (
+                          // Item images may be Data URLs or user-provided remote URLs.
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={thumbnail}
                             alt={chat.item?.name}

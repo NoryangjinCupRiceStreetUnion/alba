@@ -2,11 +2,28 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Calendar, MapPin, Sparkles, CheckCircle2, Share2, Heart, Info, PackageOpen } from "lucide-react"
+import {
+  Calendar,
+  CheckCircle2,
+  Heart,
+  Info,
+  MapPin,
+  Share2,
+  Sparkles,
+} from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import BatteryProgress from "@/components/bat"
 import { toast } from "sonner"
 import type { Session } from "next-auth"
+
+const CATEGORY_LABELS: Record<string, string> = {
+  devices: "IT/디바이스",
+  tools: "생활/공구",
+  books: "도서/전공서적",
+  leisure: "캠핑/레저",
+  apparel: "의류/잡화",
+}
 
 interface ItemType {
   id: string
@@ -15,12 +32,10 @@ interface ItemType {
   region: string
   dailyPrice: number
   weeklyPrice?: number
-  tradeMethod: string
-  available?: boolean
+  tradeMethod: "MEET" | "DELIVER"
   ownerNickname?: string
   ownerTrustBattery?: number
   imageUrl?: string
-  gallery?: string[]
   description: string
   locationDetail?: string
   availableFrom: string
@@ -122,10 +137,9 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
         <div className="lg:col-span-7 flex flex-col gap-4">
           {/* Main Image Frame - 이미지 1장 */}
           <div className="relative aspect-video rounded-3xl overflow-hidden border border-border/60 bg-accent/20 shadow-md">
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              
-            </div>
             {item.imageUrl ? (
+              // Item images may be Data URLs or user-provided remote URLs.
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={item.imageUrl}
                 alt={item.name}
@@ -170,7 +184,7 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
             <div className="flex justify-between items-start gap-4">
               <div>
                 <span className="inline-block text-[10px] font-bold text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-md mb-2">
-                  {item.category === "devices" ? "IT/디바이스" : item.category === "tools" ? "생활/공구" : item.category === "books" ? "도서/전공서적" : item.category === "leisure" ? "캠핑/레저" : item.category === "delivery" ? "택배 가능" : "대여 물품"}
+                  {CATEGORY_LABELS[item.category ?? ""] ?? "대여 물품"}
                 </span>
                 <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-tight">
                   {item.name}
@@ -329,7 +343,7 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
               {/* Rent Action Button */}
               <Button
                 type="submit"
-                disabled={rentalDays <= 0}
+                disabled={rentalDays <= 0 || isSubmitting}
                 className="mt-4 h-12 w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold tracking-wide shadow-md shadow-indigo-600/15 disabled:opacity-50"
               >
                 대여 예약 제안하기

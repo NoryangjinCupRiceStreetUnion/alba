@@ -1,26 +1,30 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { useSession, signOut } from "next-auth/react";
-import BatteryProgress from "@/components/bat";
+import Image from "next/image"
+import Link from "next/link"
+import { signOut, useSession } from "next-auth/react"
+import { useTheme } from "next-themes"
+import { Moon, Sun } from "lucide-react"
+
+import BatteryProgress from "@/components/bat"
+import { Button } from "@/components/ui/button"
 
 export default function Navbar() {
-  const { theme, setTheme } = useTheme();
-  const { data: session } = useSession();
-  const user = session?.user;
+  const { theme, setTheme } = useTheme()
+  const { data: session } = useSession()
+  const user = session?.user
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/70 backdrop-blur-lg transition-all duration-300">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         {/* 원본 로고 */}
         <Link href="/" className="flex items-center gap-2 group">
-          <img
+          <Image
             src="/logo.png"
-            alt="logo"
-            className="h-7 transition-transform group-hover:scale-105"
+            alt="빌려요"
+            width={624}
+            height={658}
+            className="h-7 w-auto transition-transform group-hover:scale-105"
           />
         </Link>
 
@@ -52,6 +56,8 @@ export default function Navbar() {
               {/* 프로필 아바타 */}
               <div className="flex items-center gap-2">
                 {user.image ? (
+                  // Profile images can come from arbitrary authentication providers.
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.image} alt="profile" className="h-8 w-8 rounded-xl object-cover ring-2 ring-primary/20" />
                 ) : (
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 font-bold text-primary border border-primary/20 text-sm">
@@ -90,5 +96,5 @@ export default function Navbar() {
         </div>
       </div>
     </header>
-  );
+  )
 }

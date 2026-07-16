@@ -2,15 +2,13 @@ import { createServer } from "node:http";
 import { parse } from "node:url";
 import next from "next";
 import { Server } from "socket.io";
-import { PrismaClient } from "@prisma/client";
 
 const port = Number(process.env.PORT || 3000);
-const hostname = process.env.HOSTNAME || "localhost";
-const dev = process.env.NODE_ENV !== "production";
+const hostname = process.env.HOSTNAME || "0.0.0.0";
+const dev = false;
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
-const prisma = new PrismaClient();
 
 app.prepare().then(() => {
   const server = createServer((req, res) => {
@@ -18,14 +16,7 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
 
-  const io = new Server(server, {
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"],
-    },
-  });
-
-  globalThis.__socketIo = io;
+  const io = new Server(server);
 
   io.on("connection", (socket) => {
     socket.on("join-chat", (chatId) => {

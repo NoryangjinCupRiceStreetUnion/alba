@@ -20,16 +20,10 @@ export default async function Page({ params }: PageProps) {
       images: { orderBy: { order: "asc" } },
       owner: {
         select: {
-          id: true,
           name: true,
           nickname: true,
-          image: true,
           trustBattery: true,
         },
-      },
-      rentals: {
-        where: { status: { in: ["APPROVED", "BORROWED"] } },
-        select: { startAt: true, endAt: true },
       },
     },
   })
@@ -53,11 +47,9 @@ export default async function Page({ params }: PageProps) {
     dailyPrice: item.dailyPrice,
     weeklyPrice: item.weeklyPrice ?? undefined,
     tradeMethod: item.tradeMethod,
-    available: item.status === "AVAILABLE",
     ownerNickname: item.owner.nickname || item.owner.name || "알 수 없음",
     ownerTrustBattery: item.owner.trustBattery,
     imageUrl: item.images[0]?.url,
-    gallery: item.images.map((image) => image.url),
     description: item.description,
     locationDetail: item.locationDetail ?? item.region,
     availableFrom: item.availableFrom.toISOString(),

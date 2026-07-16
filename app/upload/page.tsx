@@ -2,9 +2,21 @@
 
 import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { Camera, CheckCircle2, Sparkles, X, Info, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Image from "next/image"
 import Link from "next/link"
+import { Camera, CheckCircle2, Sparkles, X, Info, ArrowRight } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+
+type ItemCategory = "DEVICES" | "TOOLS" | "BOOKS" | "LEISURE" | "APPAREL"
+
+const CATEGORY_LABELS: Record<ItemCategory, string> = {
+  DEVICES: "IT/디바이스",
+  TOOLS: "생활/공구",
+  BOOKS: "도서/전공서적",
+  LEISURE: "캠핑/레저",
+  APPAREL: "의류/잡화",
+}
 
 export default function UploadPage() {
   const { status } = useSession()
@@ -12,7 +24,7 @@ export default function UploadPage() {
   // Form states
   const [images, setImages] = useState<string[]>([])
   const [name, setName] = useState("")
-  const [category, setCategory] = useState<"DEVICES" | "TOOLS" | "BOOKS" | "LEISURE" | "APPAREL">("DEVICES")
+  const [category, setCategory] = useState<ItemCategory>("DEVICES")
   const [description, setDescription] = useState("")
   const [tradeMethod, setTradeMethod] = useState<"MEET" | "DELIVER">("MEET")
   const [region, setRegion] = useState("서울 동작구 노량진동")
@@ -27,7 +39,7 @@ export default function UploadPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [createdItemId, setCreatedItemId] = useState<string | null>(null)
-  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Handle local image file upload converting to Base64
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,7 +56,7 @@ export default function UploadPage() {
         const reader = new FileReader()
         reader.onloadend = () => {
           if (typeof reader.result === "string") {
-            setImages((prev) => [...prev, reader.result as string])
+            setImages((prev) => [...prev, reader.result])
           }
         }
         reader.readAsDataURL(file)
@@ -58,7 +70,7 @@ export default function UploadPage() {
 
   // Validate form
   const validateForm = () => {
-    const newErrors: { [key: string]: string } = {}
+    const newErrors: Record<string, string> = {}
     if (images.length === 0) newErrors.images = "최소 1장 이상의 물건 이미지를 업로드해 주세요."
     if (name.length < 2 || name.length > 60) newErrors.name = "물건 이름은 2자 이상, 60자 이하로 작성해 주세요."
     if (!description || description.length > 2000) newErrors.description = "설명은 1자 이상, 2,000자 이하로 작성해 주세요."
@@ -171,14 +183,17 @@ export default function UploadPage() {
 
             {/* Created card mockup */}
             <div className="my-8 max-w-sm mx-auto rounded-2xl border border-border bg-background p-4 text-left shadow-md flex items-center gap-4">
-              <img
+              <Image
                 src={images[0]}
                 alt="preview"
+                width={80}
+                height={80}
+                unoptimized
                 className="w-20 h-20 rounded-xl object-cover bg-accent"
               />
               <div className="flex-1 min-w-0">
                 <span className="inline-block text-[9px] font-bold text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded mb-1">
-                  {category === "DEVICES" ? "IT/디바이스" : category === "TOOLS" ? "생활/공구" : category === "BOOKS" ? "도서/전공서적" : category === "LEISURE" ? "캠핑/레저" : "의류/잡화"}
+                  {CATEGORY_LABELS[category]}
                 </span>
                 <h3 className="text-sm font-bold truncate text-foreground">{name}</h3>
                 <p className="text-xs text-indigo-600 dark:text-indigo-400 font-extrabold mt-1">
@@ -243,7 +258,14 @@ export default function UploadPage() {
                 <div className="flex flex-wrap gap-3">
                   {images.map((img, index) => (
                     <div key={index} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border bg-accent">
-                      <img src={img} alt={`upload-${index}`} className="w-full h-full object-cover" />
+                      <Image
+                        src={img}
+                        alt={`upload-${index}`}
+                        width={80}
+                        height={80}
+                        unoptimized
+                        className="w-full h-full object-cover"
+                      />
                       {index === 0 && (
                         <div className="absolute bottom-0 inset-x-0 bg-indigo-600 text-white text-[9px] font-bold text-center py-0.5 shadow-sm">
                           대표 사진

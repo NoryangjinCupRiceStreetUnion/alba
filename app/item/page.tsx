@@ -11,7 +11,12 @@ export default async function Page() {
   const items = await prisma.item.findMany({
     where: { status: "AVAILABLE" },
     orderBy: { createdAt: "desc" },
-    include: { images: { orderBy: { order: "asc" }, take: 1 } },
+    select: {
+      id: true,
+      name: true,
+      region: true,
+      dailyPrice: true,
+    },
   })
 
   return (

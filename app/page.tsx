@@ -1,13 +1,20 @@
-"use client";
+"use client"
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { Search, MapPin, Flame, Filter, ArrowUpDown, MessageCircle, PackageOpen } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import BatteryProgress from "@/components/bat";
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import {
+  ArrowUpDown,
+  Filter,
+  MapPin,
+  MessageCircle,
+  PackageOpen,
+  Search,
+} from "lucide-react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 type ItemCard = {
   id: string;
@@ -15,61 +22,52 @@ type ItemCard = {
   description: string;
   region: string;
   dailyPrice: number;
-  weeklyPrice?: number | null;
-  tradeMethod: "MEET" | "DELIVER";
-  status?: string;
-  images?: Array<{ url: string }>;
-  owner?: {
-    nickname?: string | null;
-    name?: string | null;
-    trustBattery?: number | null;
-  };
-};
+  tradeMethod: "MEET" | "DELIVER"
+  images?: Array<{ url: string }>
+}
 
-type TrendItem = {
-  rank: number;
-  rankChange: number;
-  name: string;
-  count: number;
-  score: number;
-};
+const SLOGAN = ["잠시 쉬는 물건이,", "쏠쏠한 대여 수익이 되도록."] as const
+const TRADE_FILTERS = [
+  { value: "all", label: "전체" },
+  { value: "MEET", label: "직거래" },
+  { value: "DELIVER", label: "택배" },
+] as const
+const REGION_FILTERS = [
+  { value: "all", label: "전체 지역" },
+  { value: "노량진동", label: "노량진동" },
+  { value: "상도동", label: "상도동" },
+  { value: "대방동", label: "대방동" },
+] as const
 
-const SLOGANS = [
-  ["잠시 쉬는 물건이,", "쏠쏠한 대여 수익이 되도록."],
-  ["급하게 필요한 물건,", "굳이 사지 말고 빌려 쓰세요."],
-];
-
-const TREND_ITEMS: TrendItem[] = [
-  { rank: 1, rankChange: 2, name: "아이패드", count: 128, score: 230 },
-  { rank: 2, rankChange: -1, name: "전동드릴", count: 94, score: 185 },
-  { rank: 3, rankChange: 0, name: "노이즈캔슬링 헤드폰", count: 88, score: 160 },
-];
+type TradeFilter = (typeof TRADE_FILTERS)[number]["value"]
+type RegionFilter = (typeof REGION_FILTERS)[number]["value"]
+type SortOrder = "latest" | "priceAsc" | "priceDesc"
 
 export default function Page() {
-  const slogan = SLOGANS[0];
-  const [items, setItems] = useState<ItemCard[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [tradeFilter, setTradeFilter] = useState("all");
-  const [sortOrder, setSortOrder] = useState("latest");
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState("all");
+  const [items, setItems] = useState<ItemCard[]>([])
+  const [loading, setLoading] = useState(true)
+  const [query, setQuery] = useState("")
+  const [tradeFilter, setTradeFilter] = useState<TradeFilter>("all")
+  const [sortOrder, setSortOrder] = useState<SortOrder>("latest")
+  const [showFilters, setShowFilters] = useState(false)
+  const [selectedRegion, setSelectedRegion] = useState<RegionFilter>("all")
 
   useEffect(() => {
     async function loadItems() {
       try {
-        const res = await fetch("/api/items?limit=50");
-        if (!res.ok) throw new Error("failed");
-        const payload = await res.json();
-        setItems(payload.data ?? []);
+        const response = await fetch("/api/items?limit=50")
+        if (!response.ok) throw new Error("물품 목록을 불러오지 못했습니다.")
+
+        const payload = (await response.json()) as { data?: ItemCard[] }
+        setItems(payload.data ?? [])
       } catch {
-        setItems([]);
+        setItems([])
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
-    loadItems();
-  }, []);
+    loadItems()
+  }, [])
 
   const filteredItems = useMemo(() => {
     const next = items.filter((item) => {
@@ -78,15 +76,16 @@ export default function Page() {
         item.description.toLowerCase().includes(query.toLowerCase());
       const matchesTrade = tradeFilter === "all" || item.tradeMethod === tradeFilter;
       const matchesRegion = selectedRegion === "all" || item.region.includes(selectedRegion);
-      return matchesQuery && matchesTrade && matchesRegion;
-    });
+      return matchesQuery && matchesTrade && matchesRegion
+    })
+
+    if (sortOrder === "latest") return next
 
     return next.sort((a, b) => {
       if (sortOrder === "priceAsc") return a.dailyPrice - b.dailyPrice;
-      if (sortOrder === "priceDesc") return b.dailyPrice - a.dailyPrice;
-      return b.name.localeCompare(a.name);
-    });
-  }, [items, query, tradeFilter, selectedRegion, sortOrder]);
+      return b.dailyPrice - a.dailyPrice
+    })
+  }, [items, query, tradeFilter, selectedRegion, sortOrder])
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
@@ -96,9 +95,9 @@ export default function Page() {
       <section className="mx-auto max-w-7xl px-6 pt-16 pb-12 text-center">
 
         <h1 className="mx-auto flex max-w-3xl flex-col gap-2 text-4xl font-black leading-tight sm:text-5xl">
-          <span>{slogan[0]}</span>
+          <span>{SLOGAN[0]}</span>
           <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent  decoration-indigo-500/30 underline-offset-8">
-            {slogan[1]}
+            {SLOGAN[1]}
           </span>
         </h1>
         <p className="mx-auto mt-6 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
@@ -107,14 +106,14 @@ export default function Page() {
 
         <div className="mx-auto mt-10 max-w-2xl">
           <div className="relative group">
-            <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-20 blur-md transition duration-300 group-hover:opacity-40" />
+            <div className="absolute" />
             <div className="relative flex items-center rounded-2xl border border-border/80 bg-card px-4 py-2 shadow-lg">
               <Search className="mr-3 h-5 w-5 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="어떤 물건을 빌리고 싶으세요?"
-                className="h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                className="h-10 border-0 bg-transparent px-0 shadow-none"
               />
               {query ? (
                 <button onClick={() => setQuery("")} className="mr-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">
@@ -165,11 +164,7 @@ export default function Page() {
               <Filter className="h-3.5 w-3.5" /> 상세 필터
             </button>
             <div className="flex rounded-lg border border-border/60 bg-card p-0.5 text-xs">
-              {[
-                { value: "all", label: "전체" },
-                { value: "MEET", label: "직거래" },
-                { value: "DELIVER", label: "택배" },
-              ].map((option) => (
+              {TRADE_FILTERS.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => setTradeFilter(option.value)}
@@ -180,12 +175,7 @@ export default function Page() {
               ))}
             </div>
             <div className="flex rounded-lg border border-border/60 bg-card p-0.5 text-xs">
-              {[
-                { value: "all", label: "전체 지역" },
-                { value: "노량진동", label: "노량진동" },
-                { value: "상도동", label: "상도동" },
-                { value: "대방동", label: "대방동" },
-              ].map((option) => (
+              {REGION_FILTERS.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => setSelectedRegion(option.value)}
@@ -199,7 +189,7 @@ export default function Page() {
 
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <ArrowUpDown className="h-3.5 w-3.5" />
-            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="cursor-pointer bg-transparent font-semibold text-foreground focus:outline-none">
+            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as SortOrder)} className="cursor-pointer bg-transparent font-semibold text-foreground focus:outline-none">
               <option value="latest">최신 등록순</option>
               <option value="priceAsc">대여가 낮은순</option>
               <option value="priceDesc">대여가 높은순</option>
@@ -212,11 +202,7 @@ export default function Page() {
             <div>
               <h4 className="mb-2 text-xs font-bold uppercase tracking-wider">거래 방식</h4>
               <div className="flex gap-2">
-                {[
-                  { value: "all", label: "전체" },
-                  { value: "MEET", label: "직거래" },
-                  { value: "DELIVER", label: "택배" },
-                ].map((option) => (
+                {TRADE_FILTERS.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => setTradeFilter(option.value)}
@@ -229,11 +215,12 @@ export default function Page() {
             </div>
             <div>
               <h4 className="mb-2 text-xs font-bold uppercase tracking-wider">지역</h4>
-              <select value={selectedRegion} onChange={(e) => setSelectedRegion(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                <option value="all">전체 지역</option>
-                <option value="노량진동">노량진동</option>
-                <option value="상도동">상도동</option>
-                <option value="대방동">대방동</option>
+              <select value={selectedRegion} onChange={(e) => setSelectedRegion(e.target.value as RegionFilter)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                {REGION_FILTERS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -254,16 +241,15 @@ export default function Page() {
             {filteredItems.map((item) => (
               <Link key={item.id} href={`/item/${item.id}`} className="group overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5">
                 <div className="relative aspect-video overflow-hidden bg-accent/30">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-
-                  </div>
                   {item.images?.[0]?.url ? (
+                    // Item images may be Data URLs or user-provided remote URLs.
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.images[0].url}
                       alt={item.name}
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(event) => {
-                        event.currentTarget.hidden = true;
+                        event.currentTarget.hidden = true
                       }}
                     />
                   ) : null}
@@ -292,5 +278,5 @@ export default function Page() {
         )}
       </main>
     </div>
-  );
+  )
 }

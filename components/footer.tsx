@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 
 export default function Footer() {
@@ -8,7 +9,13 @@ export default function Footer() {
                     {/* Brand Section */}
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
-                            <img src="/logo.png" alt="logo" className="h-6" />
+                            <Image
+                                src="/logo.png"
+                                alt="빌려요"
+                                width={624}
+                                height={658}
+                                className="h-6 w-auto"
+                            />
                         </div>
                         <p className="text-xs leading-relaxed max-w-xs">
                             동작구 노량진 이웃들과 함께하는 쉽고 안전한 공유 대여 플랫폼. 안 쓰는 물건으로 소소한 수익을 얻고, 필요한 물건은 저렴하게 빌려 써보세요.

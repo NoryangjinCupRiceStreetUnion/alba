@@ -203,6 +203,8 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
         </Link>
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {thumbnail && (
+            // Item images may be Data URLs or user-provided remote URLs.
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={thumbnail} alt="" className="h-10 w-10 rounded-xl object-cover border border-border/40 shrink-0" />
           )}
           <div className="min-w-0">
