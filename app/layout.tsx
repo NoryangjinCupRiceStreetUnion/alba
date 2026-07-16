@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 
 const pretendard = localFont({
-    src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
+    src: "../public/PretendardVariable.ttf",
     variable: "--font-pretendard",
     weight: "45 920",
     display: "swap",
