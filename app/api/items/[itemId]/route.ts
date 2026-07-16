@@ -1,98 +1,226 @@
-import { auth } from "@/auth"
-import { prisma } from "@/lib/prisma"
-import { NextRequest, NextResponse } from "next/server"
+import { ItemStatus } from "@prisma/client"
+import type { NextRequest } from "next/server"
 
-// GET /api/items/:itemId
-export async function GET(req: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
+import { auth } from "@/auth"
+import {
+  dataResponse,
+  errorResponse,
+  internalError,
+  validationError,
+} from "@/lib/api"
+import {
+  BLOCKING_RENTAL_STATUSES,
+  incrementDailyMetric,
+  startOfUtcDay,
+} from "@/lib/marketplace"
+import { prisma } from "@/lib/prisma"
+import { itemUpdateSchema } from "@/lib/validation"
+
+type Context = { params: Promise<{ itemId: string }> }
+
+export async function GET(request: NextRequest, { params }: Context) {
   try {
     const { itemId } = await params
-
+    const session = await auth()
+    const viewerId = session?.user?.id
     const item = await prisma.item.findUnique({
       where: { id: itemId },
       include: {
         images: { orderBy: { order: "asc" } },
-        owner: { select: { id: true, name: true, nickname: true, image: true, trustBattery: true } },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            nickname: true,
+            image: true,
+            trustBattery: true,
+            createdAt: true,
+          },
+        },
         rentals: {
-          where: { status: { in: ["APPROVED", "BORROWED"] } },
+          where: { status: { in: [...BLOCKING_RENTAL_STATUSES] } },
           select: { startAt: true, endAt: true },
+          orderBy: { startAt: "asc" },
         },
       },
     })
 
-    if (!item || item.status === "DEACTIVATED") {
-      return NextResponse.json({ error: { code: "ITEM_NOT_FOUND", message: "물건을 찾을 수 없습니다." } }, { status: 404 })
+    if (
+      !item ||
+      (item.status === ItemStatus.DEACTIVATED && item.ownerId !== viewerId)
+    ) {
+      return errorResponse("ITEM_NOT_FOUND", "물건을 찾을 수 없습니다.", 404)
     }
 
-    return NextResponse.json({ data: item })
-  } catch (e) {
-    console.error(e)
-    return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." } }, { status: 500 })
+    const cookieName = `item-view-${item.id}`
+    const today = startOfUtcDay().toISOString().slice(0, 10)
+    const alreadyViewed = request.cookies.get(cookieName)?.value === today
+    const shouldCount = item.ownerId !== viewerId && !alreadyViewed
+
+    if (shouldCount) {
+      await incrementDailyMetric(prisma, item.id, "viewCount")
+    }
+
+    const response = dataResponse(item)
+    if (shouldCount) {
+      response.cookies.set(cookieName, today, {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24,
+        path: "/",
+      })
+    }
+
+    return response
+  } catch (error) {
+    return internalError(error)
   }
 }
 
-// PATCH /api/items/:itemId
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
+export async function PATCH(request: Request, { params }: Context) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "로그인이 필요합니다." } }, { status: 401 })
-    }
-
     const { itemId } = await params
-    const item = await prisma.item.findUnique({ where: { id: itemId } })
+    const session = await auth()
+    const userId = session?.user?.id
 
-    if (!item || item.status === "DEACTIVATED") {
-      return NextResponse.json({ error: { code: "ITEM_NOT_FOUND", message: "물건을 찾을 수 없습니다." } }, { status: 404 })
-    }
-    if (item.ownerId !== session.user.id) {
-      return NextResponse.json({ error: { code: "FORBIDDEN", message: "권한이 없습니다." } }, { status: 403 })
+    if (!userId) {
+      return errorResponse("UNAUTHORIZED", "로그인이 필요합니다.", 401)
     }
 
-    const body = await req.json()
-    const updated = await prisma.item.update({
-      where: { id: itemId },
-      data: {
-        ...(body.name && { name: body.name }),
-        ...(body.description && { description: body.description }),
-        ...(body.tradeMethod && { tradeMethod: body.tradeMethod }),
-        ...(body.region && { region: body.region }),
-        ...(body.dailyPrice !== undefined && { dailyPrice: body.dailyPrice }),
-        ...(body.weeklyPrice !== undefined && { weeklyPrice: body.weeklyPrice }),
-        ...(body.availableFrom && { availableFrom: new Date(body.availableFrom) }),
-        ...(body.availableUntil && { availableUntil: new Date(body.availableUntil) }),
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return errorResponse("INVALID_JSON", "JSON 본문이 필요합니다.", 400)
+    }
+
+    const parsed = itemUpdateSchema.safeParse(body)
+    if (!parsed.success) return validationError(parsed.error)
+    if (Object.keys(parsed.data).length === 0) {
+      return errorResponse(
+        "EMPTY_UPDATE",
+        "수정할 값을 하나 이상 입력해주세요.",
+        400
+      )
+    }
+
+    const existing = await prisma.item.findUnique({ where: { id: itemId } })
+    if (!existing) {
+      return errorResponse("ITEM_NOT_FOUND", "물건을 찾을 수 없습니다.", 404)
+    }
+    if (existing.ownerId !== userId) {
+      return errorResponse(
+        "FORBIDDEN",
+        "물건 소유자만 수정할 수 있습니다.",
+        403
+      )
+    }
+
+    const availableFrom = parsed.data.availableFrom ?? existing.availableFrom
+    const availableUntil = parsed.data.availableUntil ?? existing.availableUntil
+    if (availableFrom >= availableUntil) {
+      return errorResponse(
+        "INVALID_AVAILABILITY",
+        "대여 종료 시각은 시작 시각보다 늦어야 합니다.",
+        400
+      )
+    }
+
+    const conflictingRental = await prisma.rental.findFirst({
+      where: {
+        itemId,
+        status: { in: [...BLOCKING_RENTAL_STATUSES] },
+        OR: [
+          { startAt: { lt: availableFrom } },
+          { endAt: { gt: availableUntil } },
+        ],
       },
+      select: { id: true },
+    })
+    if (conflictingRental) {
+      return errorResponse(
+        "ACTIVE_RENTAL_CONFLICT",
+        "진행 중인 대여와 충돌하도록 대여 가능 기간을 변경할 수 없습니다.",
+        409
+      )
+    }
+
+    const { images, ...data } = parsed.data
+    const item = await prisma.$transaction(async (tx) => {
+      if (images) {
+        await tx.itemImage.deleteMany({ where: { itemId } })
+      }
+
+      return tx.item.update({
+        where: { id: itemId },
+        data: {
+          ...data,
+          ...(images ? { images: { create: images } } : {}),
+        },
+        include: {
+          images: { orderBy: { order: "asc" } },
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              nickname: true,
+              image: true,
+              trustBattery: true,
+            },
+          },
+        },
+      })
     })
 
-    return NextResponse.json({ data: updated })
-  } catch (e) {
-    console.error(e)
-    return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." } }, { status: 500 })
+    return dataResponse(item)
+  } catch (error) {
+    return internalError(error)
   }
 }
 
-// DELETE /api/items/:itemId - soft delete
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
+export async function DELETE(_request: Request, { params }: Context) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "로그인이 필요합니다." } }, { status: 401 })
-    }
-
     const { itemId } = await params
-    const item = await prisma.item.findUnique({ where: { id: itemId } })
+    const session = await auth()
+    const userId = session?.user?.id
 
+    if (!userId) {
+      return errorResponse("UNAUTHORIZED", "로그인이 필요합니다.", 401)
+    }
+
+    const item = await prisma.item.findUnique({
+      where: { id: itemId },
+      select: { id: true, ownerId: true },
+    })
     if (!item) {
-      return NextResponse.json({ error: { code: "ITEM_NOT_FOUND", message: "물건을 찾을 수 없습니다." } }, { status: 404 })
+      return errorResponse("ITEM_NOT_FOUND", "물건을 찾을 수 없습니다.", 404)
     }
-    if (item.ownerId !== session.user.id) {
-      return NextResponse.json({ error: { code: "FORBIDDEN", message: "권한이 없습니다." } }, { status: 403 })
+    if (item.ownerId !== userId) {
+      return errorResponse(
+        "FORBIDDEN",
+        "물건 소유자만 삭제할 수 있습니다.",
+        403
+      )
     }
 
-    await prisma.item.update({ where: { id: itemId }, data: { status: "DEACTIVATED" } })
+    const activeRentalCount = await prisma.rental.count({
+      where: { itemId, status: { in: [...BLOCKING_RENTAL_STATUSES] } },
+    })
+    if (activeRentalCount > 0) {
+      return errorResponse(
+        "ACTIVE_RENTAL_EXISTS",
+        "진행 중인 대여가 있어 물건을 비활성화할 수 없습니다.",
+        409
+      )
+    }
 
-    return new NextResponse(null, { status: 204 })
-  } catch (e) {
-    console.error(e)
-    return NextResponse.json({ error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." } }, { status: 500 })
+    await prisma.item.update({
+      where: { id: itemId },
+      data: { status: ItemStatus.DEACTIVATED },
+    })
+
+    return new Response(null, { status: 204 })
+  } catch (error) {
+    return internalError(error)
   }
 }

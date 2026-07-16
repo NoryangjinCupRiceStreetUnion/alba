@@ -27,24 +27,22 @@ enum RentalStatus {
 }
 
 model User {
-  id              String        @id @default(cuid())
+  id              String    @id @default(cuid())
   name            String?
-  email           String        @unique
+  email           String    @unique
   emailVerified   DateTime?
   image           String?
   nickname        String?
-  trustBattery    Float         @default(80)
+  trustBattery    Float     @default(80)
   accounts        Account[]
   sessions        Session[]
   items           Item[]
-  rentals         Rental[]      @relation("BorrowerRentals")
-  reviewsWritten  Review[]      @relation("ReviewAuthor")
-  reviewsReceived Review[]      @relation("ReviewTarget")
-  ownedChats      Chat[]        @relation("ChatOwner")
-  borrowedChats   Chat[]        @relation("ChatBorrower")
-  sentMessages    ChatMessage[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  rentals         Rental[]  @relation("BorrowerRentals")
+  reviewsWritten  Review[]  @relation("ReviewAuthor")
+  reviewsReceived Review[]  @relation("ReviewTarget")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -99,7 +97,6 @@ model Item {
   images         ItemImage[]
   rentals        Rental[]
   metrics        ItemMetricDaily[]
-  chats          Chat[]
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -144,7 +141,6 @@ model Rental {
   item       Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
   borrower   User         @relation("BorrowerRentals", fields: [borrowerId], references: [id], onDelete: Restrict)
   reviews    Review[]
-  chat       Chat?
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
@@ -166,35 +162,4 @@ model Review {
 
   @@unique([rentalId, authorId, targetUserId])
   @@index([targetUserId, createdAt])
-}
-
-model Chat {
-  id         String        @id @default(cuid())
-  itemId     String
-  rentalId   String?       @unique
-  ownerId    String
-  borrowerId String
-  item       Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  rental     Rental?       @relation(fields: [rentalId], references: [id], onDelete: SetNull)
-  owner      User          @relation("ChatOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  borrower   User          @relation("ChatBorrower", fields: [borrowerId], references: [id], onDelete: Cascade)
-  messages   ChatMessage[]
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-
-  @@index([itemId])
-  @@index([ownerId, updatedAt])
-  @@index([borrowerId, updatedAt])
-}
-
-model ChatMessage {
-  id        String   @id @default(cuid())
-  chatId    String
-  senderId  String
-  content   String   @db.Text
-  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@index([chatId, createdAt])
 }

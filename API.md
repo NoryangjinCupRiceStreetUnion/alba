@@ -12,6 +12,16 @@
 - 목록 페이지네이션: `cursor`와 `limit` 사용
 - 본문에 `null`이 명시된 필드는 값을 비우는 것으로 처리
 
+### 개발 DB 적용
+
+```bash
+npm install
+npx prisma migrate deploy
+npm run dev
+```
+
+새 마이그레이션을 작성할 때는 개발 환경에서 `npx prisma migrate dev --name <name>`을 사용합니다. 운영 환경에서는 `migrate dev` 대신 `migrate deploy`만 실행합니다.
+
 ### 공통 성공 응답
 
 ```json
@@ -67,7 +77,7 @@
 | `name` | `String?` | 소셜 계정 이름 |
 | `nickname` | `String?` | 서비스 표시 이름 |
 | `image` | `String?` | 프로필 이미지 URL |
-| `mannerScore` | `Float` | 기본값 `36.5` |
+| `trustBattery` | `Float` | 신뢰배터리. 기본값 `80`, 최대 `100`, 음수 가능 |
 | `createdAt` | `DateTime` | 가입 시각 |
 | `updatedAt` | `DateTime` | 수정 시각 |
 
@@ -162,22 +172,22 @@ REQUESTED ──> APPROVED ──> BORROWED ──> RETURNED
 | 기능 | Method | 경로 | 인증 | 구현 상태 |
 | --- | --- | --- | --- | --- |
 | 소셜 로그인 및 세션 | `GET/POST` | `/api/auth/[...nextauth]` | 일부 | 구현됨 |
-| 내 정보 조회 | `GET` | `/api/users/me` | 필요 | 예정 |
-| 내 정보 수정 | `PATCH` | `/api/users/me` | 필요 | 예정 |
-| 사용자 공개 프로필 | `GET` | `/api/users/:userId` | 불필요 | 예정 |
-| 물건 목록·검색 | `GET` | `/api/items` | 불필요 | 예정 |
-| 인기 물건·트렌드 | `GET` | `/api/items/trending` | 불필요 | 예정 |
-| 물건 등록 | `POST` | `/api/items` | 필요 | 예정 |
-| 물건 상세 | `GET` | `/api/items/:itemId` | 불필요 | 예정 |
-| 물건 수정 | `PATCH` | `/api/items/:itemId` | 소유자 | 예정 |
-| 물건 비활성화·삭제 | `DELETE` | `/api/items/:itemId` | 소유자 | 예정 |
-| 대여 가능 여부 조회 | `GET` | `/api/items/:itemId/availability` | 불필요 | 예정 |
-| 대여 요청 | `POST` | `/api/rentals` | 필요 | 예정 |
-| 내 대여 목록 | `GET` | `/api/rentals` | 필요 | 예정 |
-| 대여 상세 | `GET` | `/api/rentals/:rentalId` | 거래 당사자 | 예정 |
-| 대여 상태 변경 | `PATCH` | `/api/rentals/:rentalId/status` | 거래 당사자 | 예정 |
-| 후기 작성 | `POST` | `/api/rentals/:rentalId/review` | 거래 당사자 | 예정 |
-| 사용자 후기 목록 | `GET` | `/api/users/:userId/reviews` | 불필요 | 예정 |
+| 내 정보 조회 | `GET` | `/api/users/me` | 필요 | 구현됨 |
+| 내 정보 수정 | `PATCH` | `/api/users/me` | 필요 | 구현됨 |
+| 사용자 공개 프로필 | `GET` | `/api/users/:userId` | 불필요 | 구현됨 |
+| 물건 목록·검색 | `GET` | `/api/items` | 불필요 | 구현됨 |
+| 인기 물건·트렌드 | `GET` | `/api/items/trending` | 불필요 | 구현됨 |
+| 물건 등록 | `POST` | `/api/items` | 필요 | 구현됨 |
+| 물건 상세 | `GET` | `/api/items/:itemId` | 불필요 | 구현됨 |
+| 물건 수정 | `PATCH` | `/api/items/:itemId` | 소유자 | 구현됨 |
+| 물건 비활성화·삭제 | `DELETE` | `/api/items/:itemId` | 소유자 | 구현됨 |
+| 대여 가능 여부 조회 | `GET` | `/api/items/:itemId/availability` | 불필요 | 구현됨 |
+| 대여 요청 | `POST` | `/api/rentals` | 필요 | 구현됨 |
+| 내 대여 목록 | `GET` | `/api/rentals` | 필요 | 구현됨 |
+| 대여 상세 | `GET` | `/api/rentals/:rentalId` | 거래 당사자 | 구현됨 |
+| 대여 상태 변경 | `PATCH` | `/api/rentals/:rentalId/status` | 거래 당사자 | 구현됨 |
+| 후기 작성 | `POST` | `/api/rentals/:rentalId/review` | 거래 당사자 | 구현됨 |
+| 사용자 후기 목록 | `GET` | `/api/users/:userId/reviews` | 불필요 | 구현됨 |
 
 ## 4. 인증 API
 
@@ -201,7 +211,7 @@ Auth.js가 제공하는 로그인, 콜백, 로그아웃, 세션 관련 라우트
     "name": "홍길동",
     "nickname": "길동이",
     "image": "https://example.com/profile.png",
-    "mannerScore": 36.5,
+    "trustBattery": 80,
     "itemCount": 3,
     "borrowedCount": 2,
     "lentCount": 5
@@ -440,7 +450,23 @@ Query parameter:
 }
 ```
 
-후기 생성과 대상 사용자의 `mannerScore` 갱신은 하나의 트랜잭션으로 처리합니다.
+후기 생성과 대상 사용자의 `trustBattery` 갱신은 하나의 트랜잭션으로 처리합니다.
+
+신뢰배터리 규칙:
+
+- 사용자 화면에는 `trustBattery`를 **신뢰배터리**로 표시합니다.
+- 신규 사용자의 기본값은 `80`입니다.
+- 최댓값은 `100`이며, 점수 갱신 시 `100`을 초과할 수 없습니다.
+- 최솟값은 제한하지 않으므로 신뢰배터리는 음수가 될 수 있습니다.
+- 후기 점수를 신뢰배터리에 반영하는 증감 폭은 별도의 정책 함수에서 관리합니다.
+
+| 후기 점수 | 신뢰배터리 변화 |
+| --- | --- |
+| `1` | `-10` |
+| `2` | `-5` |
+| `3` | `0` |
+| `4` | `+3` |
+| `5` | `+5` |
 
 ## 9. 서버 구현 시 공통 처리
 
@@ -462,5 +488,5 @@ Query parameter:
 6. 대여 요청, 목록, 상태 변경 API와 대여 지표 집계 구현
 7. `GET /api/items/trending`과 트렌드 점수 계산 구현
 8. 내 정보와 공개 프로필 API 구현
-9. 후기와 매너 점수 갱신 구현
+9. 후기와 신뢰배터리 갱신 구현
 10. 이미지 스토리지 도입 후 Base64 저장 방식 제거
