@@ -1,0 +1,28 @@
+# PostgreSQL Database URL
+# 로컬 또는 클라우드 PostgreSQL 데이터베이스 주소를 입력하세요.
+# 예: postgresql://사용자명:비밀번호@localhost:5432/데이터베이스명?schema=public
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/alba?schema=public"
+
+# NextAuth Secret
+# 세션을 암호화하는 데 사용되는 32바이트 이상의 임의 비밀키입니다.
+# 터미널에서 `npx auth secret` 또는 `openssl rand -base64 33`을 실행하여 생성한 문자열을 넣으세요.
+AUTH_SECRET="your_nextauth_secret_here"
+
+# NextAuth Trust Host
+# 로컬 개발 및 배포 환경에서 세션 신뢰 처리를 위해 true로 설정합니다.
+AUTH_TRUST_HOST="true"
+
+# Google OAuth Credentials
+# https://console.cloud.google.com/
+AUTH_GOOGLE_ID="your_google_client_id_here"
+AUTH_GOOGLE_SECRET="your_google_client_secret_here"
+
+# Kakao OAuth Credentials
+# https://developers.kakao.com/
+AUTH_KAKAO_ID="your_kakao_client_id_here"
+AUTH_KAKAO_SECRET="your_kakao_client_secret_here"
+
+# Naver OAuth Credentials
+# https://developers.naver.com/
+AUTH_NAVER_ID="your_naver_client_id_here"
+AUTH_NAVER_SECRET="your_naver_client_secret_here"
