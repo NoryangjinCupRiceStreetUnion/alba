@@ -1,18 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { Camera, MapPin, Calendar, HelpCircle, CheckCircle2, Sparkles, X, Plus, Info, ArrowRight } from "lucide-react"
+import { Camera, CheckCircle2, Sparkles, X, Info, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 export default function UploadPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
 
   // Form states
   const [images, setImages] = useState<string[]>([])
   const [name, setName] = useState("")
-  const [category, setCategory] = useState("devices")
+  const [category, setCategory] = useState<"DEVICES" | "TOOLS" | "BOOKS" | "LEISURE" | "APPAREL">("DEVICES")
   const [description, setDescription] = useState("")
   const [tradeMethod, setTradeMethod] = useState<"MEET" | "DELIVER">("MEET")
   const [region, setRegion] = useState("서울 동작구 노량진동")
@@ -26,6 +26,7 @@ export default function UploadPage() {
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [createdItemId, setCreatedItemId] = useState<string | null>(null)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
   // Handle local image file upload converting to Base64
@@ -87,8 +88,10 @@ export default function UploadPage() {
         body: JSON.stringify({
           name,
           description,
+          category,
           tradeMethod,
           region,
+          locationDetail: locationDetail.trim() || null,
           dailyPrice: Number(dailyPrice),
           weeklyPrice: useWeeklyPrice && weeklyPrice ? Number(weeklyPrice) : null,
           availableFrom: `${availableFrom}T00:00:00.000Z`,
@@ -102,6 +105,8 @@ export default function UploadPage() {
         throw new Error(payload?.error?.message ?? "등록에 실패했습니다.")
       }
 
+      const payload = await res.json()
+      setCreatedItemId(payload.data.id)
       setIsSuccess(true)
     } catch (err) {
       setErrors({ submit: err instanceof Error ? err.message : "등록에 실패했습니다." })
@@ -173,7 +178,7 @@ export default function UploadPage() {
               />
               <div className="flex-1 min-w-0">
                 <span className="inline-block text-[9px] font-bold text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded mb-1">
-                  {category === "devices" ? "IT/디바이스" : category === "tools" ? "생활/공구" : category === "books" ? "도서/전공서적" : category === "leisure" ? "캠핑/레저" : "의류/잡화"}
+                  {category === "DEVICES" ? "IT/디바이스" : category === "TOOLS" ? "생활/공구" : category === "BOOKS" ? "도서/전공서적" : category === "LEISURE" ? "캠핑/레저" : "의류/잡화"}
                 </span>
                 <h3 className="text-sm font-bold truncate text-foreground">{name}</h3>
                 <p className="text-xs text-indigo-600 dark:text-indigo-400 font-extrabold mt-1">
@@ -183,8 +188,15 @@ export default function UploadPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row justify-center gap-3">
+              {createdItemId && (
+                <Link href={`/test/${createdItemId}`}>
+                  <Button className="w-full sm:w-auto px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11 shadow-md shadow-indigo-600/15">
+                    등록한 물건 보기
+                  </Button>
+                </Link>
+              )}
               <Link href="/">
-                <Button className="w-full sm:w-auto px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11 shadow-md shadow-indigo-600/15">
+                <Button variant="outline" className="w-full sm:w-auto px-6 rounded-xl font-bold h-11">
                   목록으로 가기
                 </Button>
               </Link>
@@ -199,6 +211,7 @@ export default function UploadPage() {
                   setAvailableFrom("")
                   setAvailableUntil("")
                   setLocationDetail("")
+                  setCreatedItemId(null)
                   setIsSuccess(false)
                 }}
                 className="w-full sm:w-auto px-6 rounded-xl border border-border text-sm font-semibold hover:bg-accent h-11 transition-colors"
@@ -251,6 +264,7 @@ export default function UploadPage() {
                       <Camera className="h-5 w-5 text-muted-foreground" />
                       <span className="text-[9px] text-muted-foreground mt-1 font-semibold">사진 추가</span>
                       <input
+                        aria-label="물건 이미지 선택"
                         type="file"
                         accept="image/*"
                         multiple
@@ -269,10 +283,11 @@ export default function UploadPage() {
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-4">
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-center pl-1">
-                    <label className="text-xs font-extrabold text-foreground">물건 이름</label>
+                    <label htmlFor="item-name" className="text-xs font-extrabold text-foreground">물건 이름</label>
                     <span className="text-[10px] text-muted-foreground">{name.length} / 60자</span>
                   </div>
                   <input
+                    id="item-name"
                     type="text"
                     required
                     placeholder="예: 아이패드 프로 M2 (11인치, 2세대 펜슬 포함)"
@@ -285,23 +300,25 @@ export default function UploadPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-foreground pl-1">카테고리</label>
+                    <label htmlFor="item-category" className="text-xs font-extrabold text-foreground pl-1">카테고리</label>
                     <select
+                      id="item-category"
                       value={category}
-                      onChange={(e) => setCategory(e.target.value)}
+                      onChange={(e) => setCategory(e.target.value as typeof category)}
                       className="h-11 w-full rounded-xl border border-border bg-background px-3 text-xs focus:border-indigo-600 focus:outline-none"
                     >
-                      <option value="devices">IT/디바이스</option>
-                      <option value="tools">생활/공구</option>
-                      <option value="books">도서/전공서적</option>
-                      <option value="leisure">캠핑/레저</option>
-                      <option value="apparel">의류/잡화</option>
+                      <option value="DEVICES">IT/디바이스</option>
+                      <option value="TOOLS">생활/공구</option>
+                      <option value="BOOKS">도서/전공서적</option>
+                      <option value="LEISURE">캠핑/레저</option>
+                      <option value="APPAREL">의류/잡화</option>
                     </select>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-foreground pl-1">기본 대여 지역</label>
+                    <label htmlFor="item-region" className="text-xs font-extrabold text-foreground pl-1">기본 대여 지역</label>
                     <input
+                      id="item-region"
                       type="text"
                       required
                       placeholder="예: 서울 동작구 노량진동"
@@ -345,8 +362,9 @@ export default function UploadPage() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-foreground pl-1">상세 거래 위치 및 협의 사항</label>
+                    <label htmlFor="item-location-detail" className="text-xs font-extrabold text-foreground pl-1">상세 거래 위치 및 협의 사항</label>
                     <input
+                      id="item-location-detail"
                       type="text"
                       placeholder="예: 노량진역 3번 출구 또는 메가스터디 로비"
                       value={locationDetail}
@@ -358,9 +376,10 @@ export default function UploadPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-foreground pl-1">대여 시작 가능일</label>
+                    <label htmlFor="available-from" className="text-xs font-extrabold text-foreground pl-1">대여 시작 가능일</label>
                     <div className="relative">
                       <input
+                        id="available-from"
                         type="date"
                         required
                         value={availableFrom}
@@ -373,9 +392,10 @@ export default function UploadPage() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-foreground pl-1">대여 종료 기한일</label>
+                    <label htmlFor="available-until" className="text-xs font-extrabold text-foreground pl-1">대여 종료 기한일</label>
                     <div className="relative">
                       <input
+                        id="available-until"
                         type="date"
                         required
                         value={availableUntil}
@@ -392,8 +412,9 @@ export default function UploadPage() {
               {/* Price settings Card */}
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-foreground pl-1">1일 대여 요금 (원)</label>
+                  <label htmlFor="daily-price" className="text-xs font-extrabold text-foreground pl-1">1일 대여 요금 (원)</label>
                   <input
+                    id="daily-price"
                     type="number"
                     required
                     placeholder="예: 2000"
@@ -441,10 +462,11 @@ export default function UploadPage() {
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-4">
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-center pl-1">
-                    <label className="text-xs font-extrabold text-foreground">대여 물건 상세 설명</label>
+                    <label htmlFor="item-description" className="text-xs font-extrabold text-foreground">대여 물건 상세 설명</label>
                     <span className="text-[10px] text-muted-foreground">{description.length} / 2000자</span>
                   </div>
                   <textarea
+                    id="item-description"
                     required
                     placeholder="대여할 물품의 실사용 정보, 상태, 구성품, 유의사항 등을 이웃들이 쉽게 알아볼 수 있도록 꼼꼼하게 작성해 주세요."
                     value={description}

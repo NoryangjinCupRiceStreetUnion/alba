@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { ItemCategory, TradeMethod } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 // GET /api/items - 물건 목록 조회
@@ -68,15 +69,60 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, description, tradeMethod, region, dailyPrice, weeklyPrice, availableFrom, availableUntil, images } = body
+    const {
+      name,
+      description,
+      category,
+      tradeMethod,
+      region,
+      locationDetail,
+      dailyPrice,
+      weeklyPrice,
+      availableFrom,
+      availableUntil,
+      images,
+    } = body
 
-    if (!name || name.length < 2 || name.length > 60) {
+    if (typeof name !== "string" || name.length < 2 || name.length > 60) {
       return NextResponse.json({ error: { code: "INVALID_NAME", message: "물건 이름은 2~60자여야 합니다." } }, { status: 400 })
     }
-    if (!images || images.length < 1 || images.length > 5) {
+    if (
+      !Array.isArray(images) ||
+      images.length < 1 ||
+      images.length > 5 ||
+      images.some((image) =>
+        typeof image !== "object" ||
+        image === null ||
+        typeof image.url !== "string" ||
+        !image.url ||
+        !Number.isInteger(image.order) ||
+        image.order < 0
+      )
+    ) {
       return NextResponse.json({ error: { code: "INVALID_IMAGES", message: "이미지는 1~5개여야 합니다." } }, { status: 400 })
     }
-    if (new Date(availableFrom) >= new Date(availableUntil)) {
+    if (!Object.values(ItemCategory).includes(category as ItemCategory)) {
+      return NextResponse.json({ error: { code: "INVALID_CATEGORY", message: "지원하지 않는 카테고리입니다." } }, { status: 400 })
+    }
+    if (!Object.values(TradeMethod).includes(tradeMethod as TradeMethod)) {
+      return NextResponse.json({ error: { code: "INVALID_TRADE_METHOD", message: "지원하지 않는 거래 방식입니다." } }, { status: 400 })
+    }
+    if (typeof description !== "string" || description.length < 1 || description.length > 2000) {
+      return NextResponse.json({ error: { code: "INVALID_DESCRIPTION", message: "설명은 1~2,000자여야 합니다." } }, { status: 400 })
+    }
+    if (typeof region !== "string" || !region.trim()) {
+      return NextResponse.json({ error: { code: "INVALID_REGION", message: "대여 지역을 입력해주세요." } }, { status: 400 })
+    }
+    if (locationDetail != null && (typeof locationDetail !== "string" || locationDetail.length > 200)) {
+      return NextResponse.json({ error: { code: "INVALID_LOCATION_DETAIL", message: "상세 위치는 200자 이하여야 합니다." } }, { status: 400 })
+    }
+    if (!Number.isInteger(dailyPrice) || dailyPrice <= 0 || (weeklyPrice != null && (!Number.isInteger(weeklyPrice) || weeklyPrice <= 0))) {
+      return NextResponse.json({ error: { code: "INVALID_PRICE", message: "대여 요금을 확인해주세요." } }, { status: 400 })
+    }
+
+    const start = new Date(availableFrom)
+    const end = new Date(availableUntil)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
       return NextResponse.json({ error: { code: "INVALID_DATES", message: "대여 시작일이 종료일보다 빨라야 합니다." } }, { status: 400 })
     }
 
@@ -85,12 +131,14 @@ export async function POST(req: NextRequest) {
         ownerId: session.user.id,
         name,
         description,
-        tradeMethod,
-        region,
+        category: category as ItemCategory,
+        tradeMethod: tradeMethod as TradeMethod,
+        region: region.trim(),
+        locationDetail: typeof locationDetail === "string" && locationDetail.trim() ? locationDetail.trim() : null,
         dailyPrice,
         weeklyPrice: weeklyPrice ?? null,
-        availableFrom: new Date(availableFrom),
-        availableUntil: new Date(availableUntil),
+        availableFrom: start,
+        availableUntil: end,
         images: {
           create: images.map((img: { url: string; order: number }) => ({ url: img.url, order: img.order })),
         },

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cha
     const userId = session.user.id
     const { content } = await req.json()
 
-    if (!content || content.trim().length === 0) {
+    if (typeof content !== "string" || content.trim().length === 0 || content.trim().length > 2000) {
       return NextResponse.json({ error: { code: "INVALID_CONTENT", message: "메시지 내용을 입력해주세요." } }, { status: 400 })
     }
 

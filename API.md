@@ -67,7 +67,7 @@
 | `name` | `String?` | 소셜 계정 이름 |
 | `nickname` | `String?` | 서비스 표시 이름 |
 | `image` | `String?` | 프로필 이미지 URL |
-| `mannerScore` | `Float` | 기본값 `36.5` |
+| `trustBattery` | `Float` | 신뢰 배터리, 기본값 `80`, 최대 `100`, 음수 가능 |
 | `createdAt` | `DateTime` | 가입 시각 |
 | `updatedAt` | `DateTime` | 수정 시각 |
 
@@ -81,8 +81,10 @@
 | `ownerId` | `String` | 등록한 사용자 ID |
 | `name` | `String` | 물건 이름 |
 | `description` | `String` | 물건 설명 |
+| `category` | `DEVICES \| TOOLS \| BOOKS \| LEISURE \| APPAREL` | 물건 카테고리 |
 | `tradeMethod` | `MEET \| DELIVER` | 거래 방식 |
 | `region` | `String` | 거래 지역 |
+| `locationDetail` | `String?` | 상세 거래 위치와 협의 사항 |
 | `dailyPrice` | `Int` | 1일 대여 가격 |
 | `weeklyPrice` | `Int?` | 1주 대여 가격 |
 | `availableFrom` | `DateTime` | 대여 가능 시작 시각 |
@@ -321,8 +323,10 @@ trendScore = viewCount + (rentalRequestCount × 5) + (rentalApprovedCount × 10)
 {
   "name": "충전식 전동드릴",
   "description": "가정용으로 가볍게 사용한 제품입니다.",
+  "category": "TOOLS",
   "tradeMethod": "MEET",
   "region": "서울 동작구 노량진동",
+  "locationDetail": "노량진역 3번 출구",
   "dailyPrice": 2000,
   "weeklyPrice": 10000,
   "availableFrom": "2026-07-18T00:00:00.000Z",
@@ -339,8 +343,10 @@ trendScore = viewCount + (rentalRequestCount × 5) + (rentalApprovedCount × 10)
 검증 규칙:
 
 - `name`: 2~60자
-- `description`: 최대 2,000자
-- `dailyPrice`, `weeklyPrice`: `0` 이상의 정수
+- `description`: 1~2,000자
+- `category`: 지원하는 `ItemCategory` 값
+- `locationDetail`: 최대 200자
+- `dailyPrice`, `weeklyPrice`: `0`보다 큰 정수
 - `availableFrom < availableUntil`
 - `images`: 최소 1개, 최대 5개
 

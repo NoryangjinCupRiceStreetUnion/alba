@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { ArrowLeft, Send } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -339,6 +339,7 @@ export default function ChatRoomClient({ chatId }: { chatId: string }) {
           disabled={sending}
         />
         <Button
+          aria-label="메시지 보내기"
           type="submit"
           size="icon"
           className="rounded-xl shrink-0"

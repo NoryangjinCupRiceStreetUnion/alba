@@ -17,6 +17,14 @@ enum ItemStatus {
   DEACTIVATED
 }
 
+enum ItemCategory {
+  DEVICES
+  TOOLS
+  BOOKS
+  LEISURE
+  APPAREL
+}
+
 enum RentalStatus {
   REQUESTED
   APPROVED
@@ -88,8 +96,10 @@ model Item {
   ownerId        String
   name           String
   description    String            @db.Text
+  category       ItemCategory      @default(DEVICES)
   tradeMethod    TradeMethod
   region         String
+  locationDetail String?
   dailyPrice     Int
   weeklyPrice    Int?
   availableFrom  DateTime

@@ -138,8 +138,9 @@ export default function LoginPage() {
         {/* 테스트 로그인 폼 */}
         <form onSubmit={handleTestLogin} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-gray-400 font-semibold pl-1">테스트 이름</label>
+            <label htmlFor="test-name" className="text-xs text-gray-400 font-semibold pl-1">테스트 이름</label>
             <input
+              id="test-name"
               type="text"
               placeholder="홍길동"
               value={testName}
@@ -148,8 +149,9 @@ export default function LoginPage() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-gray-400 font-semibold pl-1">테스트 이메일 *</label>
+            <label htmlFor="test-email" className="text-xs text-gray-400 font-semibold pl-1">테스트 이메일 *</label>
             <input
+              id="test-email"
               type="email"
               required
               placeholder="test@example.com"

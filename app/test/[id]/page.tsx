@@ -33,7 +33,7 @@ export default async function Page({ params }: PageProps) {
   const detailItem = {
     id: item.id,
     name: item.name,
-    category: item.tradeMethod === "DELIVER" ? "delivery" : "rental",
+    category: item.category.toLowerCase(),
     region: item.region,
     dailyPrice: item.dailyPrice,
     weeklyPrice: item.weeklyPrice ?? undefined,
@@ -44,7 +44,9 @@ export default async function Page({ params }: PageProps) {
     imageUrl: item.images[0]?.url ?? "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&auto=format&fit=crop&q=80",
     gallery: item.images.map((image) => image.url),
     description: item.description,
-    locationDetail: item.region,
+    locationDetail: item.locationDetail ?? item.region,
+    availableFrom: item.availableFrom.toISOString(),
+    availableUntil: item.availableUntil.toISOString(),
     maxDuration: `${days}일`,
   }
 

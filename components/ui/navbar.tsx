@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, MessageCircle } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import BatteryProgress from "@/components/bat";
@@ -47,7 +47,7 @@ export default function Navbar() {
               {/* 신뢰 배터리 */}
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-accent/40 border border-border/40 text-xs">
                 <span className="text-muted-foreground font-semibold">신뢰 배터리</span>
-                <BatteryProgress percentage={36.5} />
+                <BatteryProgress percentage={user.trustBattery} />
               </div>
               {/* 프로필 아바타 */}
               <div className="flex items-center gap-2">

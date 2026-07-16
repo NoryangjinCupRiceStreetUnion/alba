@@ -2,12 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Calendar, MapPin, Sparkles, CheckCircle2, Share2, Heart, Info, MessageCircle } from "lucide-react"
+import { Calendar, MapPin, Sparkles, CheckCircle2, Share2, Heart, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Separator } from "@/components/ui/separator"
 import BatteryProgress from "@/components/bat"
 import { toast } from "sonner"
 import type { Session } from "next-auth"
@@ -27,6 +23,8 @@ interface ItemType {
   gallery?: string[]
   description: string
   locationDetail?: string
+  availableFrom: string
+  availableUntil: string
   maxDuration?: string
 }
 
@@ -41,9 +39,12 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [isBooked, setIsBooked] = useState(false)
-  const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [redirectChatId, setRedirectChatId] = useState<string | null>(null)
+  const today = new Date().toISOString().slice(0, 10)
+  const availableFrom = item.availableFrom.slice(0, 10)
+  const availableUntil = item.availableUntil.slice(0, 10)
+  const firstAvailableDate = availableFrom > today ? availableFrom : today
 
   // 금액 계산
   let rentalDays = 0
@@ -86,8 +87,8 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           itemId: item.id,
-          startAt: new Date(startDate).toISOString(),
-          endAt: new Date(endDate).toISOString(),
+          startAt: `${startDate}T00:00:00.000Z`,
+          endAt: `${endDate}T23:59:59.000Z`,
         }),
       })
 
@@ -95,7 +96,6 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
         const payload = await res.json()
         setRedirectChatId(payload.chatId ?? null)
         setIsBooked(true)
-        setIsBookingOpen(false)
         toast.success("대여 신청이 완료됐습니다. 판매자와 바로 대화할 수 있는 채팅방으로 이동합니다.")
         setTimeout(() => {
           if (payload.chatId) {
@@ -259,24 +259,28 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
             <form onSubmit={handleBooking} className="flex flex-col gap-4 relative z-10">
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-muted-foreground font-bold pl-1">대여 시작일</label>
+                  <label htmlFor="rental-start" className="text-[10px] text-muted-foreground font-bold pl-1">대여 시작일</label>
                   <input
+                    id="rental-start"
                     type="date"
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
+                    min={firstAvailableDate}
+                    max={availableUntil}
                     className="h-10 rounded-xl border border-border bg-background px-3 text-xs focus:border-indigo-600 focus:outline-none"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] text-muted-foreground font-bold pl-1">반납 예정일</label>
+                  <label htmlFor="rental-end" className="text-[10px] text-muted-foreground font-bold pl-1">반납 예정일</label>
                   <input
+                    id="rental-end"
                     type="date"
                     required
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    min={startDate || new Date().toISOString().split("T")[0]}
+                    min={startDate || firstAvailableDate}
+                    max={availableUntil}
                     className="h-10 rounded-xl border border-border bg-background px-3 text-xs focus:border-indigo-600 focus:outline-none"
                   />
                 </div>

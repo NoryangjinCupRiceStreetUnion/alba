@@ -5,21 +5,22 @@ import { MessageCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { prisma } from "@/lib/prisma"
 
-interface ChatSummary {
-  id: string
-  ownerId: string
-  item?: { name?: string; images?: { url: string }[] }
-  rental?: { status?: string }
-  messages?: { content: string; sender?: { name?: string | null; nickname?: string | null } }[]
-}
-
-async function getChats(): Promise<ChatSummary[]> {
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
-  const res = await fetch(`${baseUrl}/api/chats`, { cache: "no-store" })
-  if (!res.ok) return []
-  const { data } = await res.json()
-  return data ?? []
+function getChats(userId: string) {
+  return prisma.chat.findMany({
+    where: { OR: [{ ownerId: userId }, { borrowerId: userId }] },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      item: { select: { name: true, images: { orderBy: { order: "asc" }, take: 1 } } },
+      rental: { select: { status: true } },
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        include: { sender: { select: { name: true, nickname: true } } },
+      },
+    },
+  })
 }
 
 const RENTAL_STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -35,7 +36,7 @@ export default async function ChatListPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
 
-  const chats = await getChats()
+  const chats = await getChats(session.user.id)
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10 min-h-screen">

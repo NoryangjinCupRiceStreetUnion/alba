@@ -61,12 +61,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        const profile = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { trustBattery: true },
+        })
+        token.trustBattery = profile?.trustBattery ?? 80
       }
       return token
     },
     async session({ session, token }) {
       if (session.user && token) {
         session.user.id = token.id as string
+        session.user.trustBattery = typeof token.trustBattery === "number" ? token.trustBattery : 80
       }
       return session
     },

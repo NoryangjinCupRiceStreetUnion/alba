@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { ItemCategory } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 // GET /api/items/:itemId
@@ -49,13 +50,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ it
     }
 
     const body = await req.json()
+    if (body.category && !Object.values(ItemCategory).includes(body.category as ItemCategory)) {
+      return NextResponse.json({ error: { code: "INVALID_CATEGORY", message: "지원하지 않는 카테고리입니다." } }, { status: 400 })
+    }
     const updated = await prisma.item.update({
       where: { id: itemId },
       data: {
         ...(body.name && { name: body.name }),
         ...(body.description && { description: body.description }),
+        ...(body.category && { category: body.category as ItemCategory }),
         ...(body.tradeMethod && { tradeMethod: body.tradeMethod }),
         ...(body.region && { region: body.region }),
+        ...(body.locationDetail !== undefined && { locationDetail: body.locationDetail || null }),
         ...(body.dailyPrice !== undefined && { dailyPrice: body.dailyPrice }),
         ...(body.weeklyPrice !== undefined && { weeklyPrice: body.weeklyPrice }),
         ...(body.availableFrom && { availableFrom: new Date(body.availableFrom) }),

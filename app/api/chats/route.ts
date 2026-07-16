@@ -1,9 +1,9 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 
 // GET /api/chats - 내 채팅 목록
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await auth()
     if (!session?.user?.id) {

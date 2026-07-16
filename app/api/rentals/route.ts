@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const start = new Date(startAt)
     const end = new Date(endAt)
 
-    if (start >= end) {
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
       return NextResponse.json({ error: { code: "INVALID_DATES", message: "종료일이 시작일보다 늦어야 합니다." } }, { status: 400 })
     }
 
@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
     }
     if (item.ownerId === session.user.id) {
       return NextResponse.json({ error: { code: "FORBIDDEN", message: "본인 물건은 대여할 수 없습니다." } }, { status: 403 })
+    }
+    if (start < item.availableFrom || end > item.availableUntil) {
+      return NextResponse.json({ error: { code: "OUTSIDE_AVAILABILITY", message: "등록된 대여 가능 기간 안에서 선택해주세요." } }, { status: 409 })
     }
 
     // 기간 중복 검사
@@ -48,7 +51,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 금액 서버 계산
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    const startDay = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())
+    const endDay = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate())
+    const days = Math.floor((endDay - startDay) / (1000 * 60 * 60 * 24)) + 1
     let totalPrice = days * item.dailyPrice
     if (item.weeklyPrice && days >= 7) {
       const weeks = Math.floor(days / 7)
@@ -56,24 +61,27 @@ export async function POST(req: NextRequest) {
       totalPrice = weeks * item.weeklyPrice + remaining * item.dailyPrice
     }
 
-    const rental = await prisma.rental.create({
-      data: {
-        itemId,
-        borrowerId: session.user.id,
-        startAt: start,
-        endAt: end,
-        totalPrice,
-      },
-    })
+    const { rental, chat } = await prisma.$transaction(async (tx) => {
+      const rental = await tx.rental.create({
+        data: {
+          itemId,
+          borrowerId: session.user.id,
+          startAt: start,
+          endAt: end,
+          totalPrice,
+        },
+      })
 
-    // 대여 신청 시 채팅방 자동 생성
-    const chat = await prisma.chat.create({
-      data: {
-        itemId,
-        rentalId: rental.id,
-        ownerId: item.ownerId,
-        borrowerId: session.user.id,
-      },
+      const chat = await tx.chat.create({
+        data: {
+          itemId,
+          rentalId: rental.id,
+          ownerId: item.ownerId,
+          borrowerId: session.user.id,
+        },
+      })
+
+      return { rental, chat }
     })
 
     return NextResponse.json({ data: rental, chatId: chat.id }, { status: 201 })
