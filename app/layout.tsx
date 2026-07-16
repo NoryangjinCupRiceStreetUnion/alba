@@ -10,6 +10,8 @@ const pretendard = localFont({
     weight: "45 920",
     display: "swap",
 });
+import Top from '@/components/top'
+import Footer from '@/components/footer'
 
 export default function RootLayout({
     children,
@@ -23,7 +25,9 @@ export default function RootLayout({
             className={cn("font-sans antialiased", pretendard.variable, pretendard.className)}
         >
             <body>
+                <Top />
                 <ThemeProvider>{children}</ThemeProvider>
+                <Footer />
             </body>
         </html>
     )
