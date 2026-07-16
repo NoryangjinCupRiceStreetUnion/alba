@@ -107,6 +107,10 @@ test("물품 등록부터 대여 승인과 채팅까지 실제 API로 동작한�
     await ownerPage.getByRole("link", { name: "등록한 물건 보기" }).click()
     await expect(ownerPage).toHaveURL(`/test/${itemId}`)
     await expect(ownerPage.getByRole("heading", { name: itemName })).toBeVisible()
+    await expect(ownerPage.getByRole("img", { name: itemName })).toHaveAttribute(
+      "src",
+      /^data:image\/png;base64,/
+    )
     await expect(ownerPage.getByText("생활/공구", { exact: true })).toBeVisible()
     await expect(ownerPage.getByText("노량진역 3번 출구")).toBeVisible()
 
@@ -114,6 +118,10 @@ test("물품 등록부터 대여 승인과 채팅까지 실제 API로 동작한�
     await borrowerPage.goto("/")
     const itemLink = borrowerPage.getByRole("link", { name: new RegExp(itemName) }).first()
     await expect(itemLink).toBeVisible()
+    await expect(itemLink.getByRole("img", { name: itemName })).toHaveAttribute(
+      "src",
+      /^data:image\/png;base64,/
+    )
     await itemLink.click()
     await expect(borrowerPage).toHaveURL(`/test/${itemId}`)
 

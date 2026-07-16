@@ -18,7 +18,7 @@ type ItemCard = {
   weeklyPrice?: number | null;
   tradeMethod: "MEET" | "DELIVER";
   status?: string;
-  thumbnailUrl?: string | null;
+  images?: Array<{ url: string }>;
   owner?: {
     nickname?: string | null;
     name?: string | null;
@@ -278,7 +278,20 @@ export default function Page() {
             {filteredItems.map((item) => (
               <Link key={item.id} href={`/test/${item.id}`} className="group overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5">
                 <div className="relative aspect-video overflow-hidden bg-accent/30">
-                  <img src={item.thumbnailUrl ?? "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&auto=format&fit=crop&q=80"} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <PackageOpen className="h-8 w-8" />
+                    <span className="text-xs font-medium">이미지 없음</span>
+                  </div>
+                  {item.images?.[0]?.url ? (
+                    <img
+                      src={item.images[0].url}
+                      alt={item.name}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(event) => {
+                        event.currentTarget.hidden = true;
+                      }}
+                    />
+                  ) : null}
                   <div className="absolute left-3 top-3 flex gap-1">
                     <Badge className={item.tradeMethod === "MEET" ? "bg-indigo-600" : "bg-purple-600"}>{item.tradeMethod === "MEET" ? "직거래" : "택배"}</Badge>
                     <Badge variant="secondary">대여가능</Badge>

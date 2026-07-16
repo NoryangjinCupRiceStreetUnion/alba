@@ -56,9 +56,7 @@ export default async function Page({ params }: PageProps) {
     available: item.status === "AVAILABLE",
     ownerNickname: item.owner.nickname || item.owner.name || "알 수 없음",
     ownerTrustBattery: item.owner.trustBattery,
-    imageUrl:
-      item.images[0]?.url ??
-      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&auto=format&fit=crop&q=80",
+    imageUrl: item.images[0]?.url,
     gallery: item.images.map((image) => image.url),
     description: item.description,
     locationDetail: item.locationDetail ?? item.region,

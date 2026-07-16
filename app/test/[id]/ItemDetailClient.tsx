@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Calendar, MapPin, Sparkles, CheckCircle2, Share2, Heart, Info } from "lucide-react"
+import { Calendar, MapPin, Sparkles, CheckCircle2, Share2, Heart, Info, PackageOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import BatteryProgress from "@/components/bat"
 import { toast } from "sonner"
@@ -122,11 +122,20 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
         <div className="lg:col-span-7 flex flex-col gap-4">
           {/* Main Image Frame - 이미지 1장 */}
           <div className="relative aspect-video rounded-3xl overflow-hidden border border-border/60 bg-accent/20 shadow-md">
-            <img
-              src={item.imageUrl}
-              alt={item.name}
-              className="h-full w-full object-cover"
-            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+              <PackageOpen className="h-10 w-10" />
+              <span className="text-sm font-medium">등록된 이미지가 없습니다</span>
+            </div>
+            {item.imageUrl ? (
+              <img
+                src={item.imageUrl}
+                alt={item.name}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.hidden = true
+                }}
+              />
+            ) : null}
             {/* Overlay Badges */}
             <div className="absolute top-4 left-4 flex gap-2">
               <span className={`text-xs font-bold px-3 py-1.5 rounded-full text-white shadow-md ${
