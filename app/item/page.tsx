@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma"
 
 export default async function Page() {
   const session = await auth()
-  if (!session) redirect("/login?callbackUrl=/test")
+  if (!session) redirect("/login?callbackUrl=/item")
 
   const items = await prisma.item.findMany({
     where: { status: "AVAILABLE" },
@@ -24,7 +24,7 @@ export default async function Page() {
           {items.map((item) => (
             <Link
               key={item.id}
-              href={`/test/${item.id}`}
+              href={`/item/${item.id}`}
               className="rounded-xl border bg-card p-4 text-card-foreground shadow-sm"
             >
               <h2 className="text-lg font-medium">{item.name}</h2>

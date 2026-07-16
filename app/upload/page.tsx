@@ -189,7 +189,7 @@ export default function UploadPage() {
 
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               {createdItemId && (
-                <Link href={`/test/${createdItemId}`}>
+                <Link href={`/item/${createdItemId}`}>
                   <Button className="w-full sm:w-auto px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11 shadow-md shadow-indigo-600/15">
                     등록한 물건 보기
                   </Button>

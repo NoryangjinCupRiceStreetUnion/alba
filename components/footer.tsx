@@ -31,8 +31,8 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/test" className="hover:text-foreground transition-colors">
-                                    전체 수강현황
+                                <Link href="/item" className="hover:text-foreground transition-colors">
+                                    전체 물품
                                 </Link>
                             </li>
                         </ul>
@@ -60,20 +60,6 @@ export default function Footer() {
                         </ul>
                     </div>
 
-                    {/* Stats & Info Section */}
-                    <div className="flex flex-col gap-4 text-xs">
-                        <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">서비스 통계</h4>
-                        <div className="flex flex-col gap-2 rounded-xl bg-accent/40 border border-border/40 p-3">
-                            <div className="flex justify-between">
-                                <span className="text-[10px]">노량진동 누적 대여</span>
-                                <span className="font-bold text-foreground">1,240 건</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-[10px]">현재 공유중인 물건</span>
-                                <span className="font-bold text-foreground">412 개</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div className="mt-12 border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px]">

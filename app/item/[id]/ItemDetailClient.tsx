@@ -123,8 +123,7 @@ export default function ItemDetailClient({ item, user }: ItemDetailClientProps) 
           {/* Main Image Frame - 이미지 1장 */}
           <div className="relative aspect-video rounded-3xl overflow-hidden border border-border/60 bg-accent/20 shadow-md">
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              <PackageOpen className="h-10 w-10" />
-              <span className="text-sm font-medium">등록된 이미지가 없습니다</span>
+              
             </div>
             {item.imageUrl ? (
               <img

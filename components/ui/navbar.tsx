@@ -35,7 +35,7 @@ export default function Navbar() {
           <Link href="/chat" className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors">
             채팅
           </Link>
-          <Link href="/test" className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors">
+          <Link href="/item" className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors">
             목록
           </Link>
         </nav>

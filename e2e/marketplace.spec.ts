@@ -165,7 +165,7 @@ test("마켓플레이스 전체 흐름과 두 세션 실시간 채팅이 동작�
 
     await expect(ownerPage.getByRole("heading", { name: "대여 물건 등록 완료!" })).toBeVisible()
     await ownerPage.getByRole("link", { name: "등록한 물건 보기" }).click()
-    await expect(ownerPage).toHaveURL(`/test/${itemId}`)
+    await expect(ownerPage).toHaveURL(`/item/${itemId}`)
     await expect(ownerPage.getByRole("heading", { name: itemName })).toBeVisible()
     await expect(ownerPage.getByRole("img", { name: itemName })).toHaveAttribute(
       "src",
@@ -225,7 +225,7 @@ test("마켓플레이스 전체 흐름과 두 세션 실시간 채팅이 동작�
       /^data:image\/png;base64,/
     )
     await itemLink.click()
-    await expect(borrowerPage).toHaveURL(`/test/${itemId}`)
+    await expect(borrowerPage).toHaveURL(`/item/${itemId}`)
     await expect(borrowerPage.getByText("노량진역 4번 출구")).toBeVisible()
 
     const availabilityResponse = await borrowerContext.request.get(

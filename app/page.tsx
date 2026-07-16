@@ -97,7 +97,7 @@ export default function Page() {
 
         <h1 className="mx-auto flex max-w-3xl flex-col gap-2 text-4xl font-black leading-tight sm:text-5xl">
           <span>{slogan[0]}</span>
-          <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent underline decoration-indigo-500/30 decoration-wavy underline-offset-8">
+          <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent  decoration-indigo-500/30 underline-offset-8">
             {slogan[1]}
           </span>
         </h1>
@@ -126,32 +126,8 @@ export default function Page() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="mb-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <Card className="border-border/60 bg-gradient-to-br from-card to-accent/10">
-            <CardContent className="p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Flame className="h-5 w-5 text-orange-500" />
-                <h2 className="text-base font-bold">실시간 급상승 대여 트렌드</h2>
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                {TREND_ITEMS.map((trend) => (
-                  <div key={trend.rank} className="rounded-xl border border-border/40 bg-background/60 p-4">
-                    <div className="flex items-start justify-between">
-                      <span className="text-xl font-black text-indigo-500">{trend.rank}</span>
-                      <Badge variant={trend.rankChange > 0 ? "default" : trend.rankChange < 0 ? "destructive" : "secondary"}>
-                        {trend.rankChange > 0 ? `▲ ${trend.rankChange}` : trend.rankChange < 0 ? `▼ ${Math.abs(trend.rankChange)}` : "유지"}
-                      </Badge>
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-sm font-bold">{trend.name}</h3>
-                      <p className="mt-1 text-[11px] text-muted-foreground">조회 {trend.count}회 · 트렌드 {trend.score}점</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+      <main className="mx-auto max-w-2xl px-6 pb-24">
+        <div className="mb-8 grid gap-6">
 
           <Card className="border-indigo-500/20 bg-indigo-500/5">
             <CardContent className="flex h-full flex-col justify-between p-6">
@@ -276,11 +252,10 @@ export default function Page() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => (
-              <Link key={item.id} href={`/test/${item.id}`} className="group overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5">
+              <Link key={item.id} href={`/item/${item.id}`} className="group overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/40 hover:shadow-lg hover:shadow-indigo-500/5">
                 <div className="relative aspect-video overflow-hidden bg-accent/30">
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                    <PackageOpen className="h-8 w-8" />
-                    <span className="text-xs font-medium">이미지 없음</span>
+
                   </div>
                   {item.images?.[0]?.url ? (
                     <img
@@ -308,10 +283,6 @@ export default function Page() {
                     <div>
                       <p className="text-[10px] text-muted-foreground">1일 대여료</p>
                       <p className="text-base font-black">{item.dailyPrice.toLocaleString()}원</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-[10px] text-muted-foreground">{item.owner?.nickname || item.owner?.name || "알 수 없음"}</span>
-                      <BatteryProgress percentage={item.owner?.trustBattery ?? 80} />
                     </div>
                   </div>
                 </div>
