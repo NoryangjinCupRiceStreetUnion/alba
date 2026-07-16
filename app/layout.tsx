@@ -3,6 +3,8 @@ import localFont from "next/font/local"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
+import { NextAuthProvider } from "./providers"
+import { Toaster } from "@/components/ui/sonner"
 
 const pretendard = localFont({
     src: "../public/PretendardVariable.ttf",
@@ -25,9 +27,14 @@ export default function RootLayout({
             className={cn("font-sans antialiased", pretendard.variable, pretendard.className)}
         >
             <body>
-                <Top />
-                <ThemeProvider>{children}</ThemeProvider>
-                <Footer />
+                <NextAuthProvider>
+                    <ThemeProvider>
+                        <Top />
+                        {children}
+                        <Footer />
+                    </ThemeProvider>
+                    <Toaster richColors position="bottom-center" />
+                </NextAuthProvider>
             </body>
         </html>
     )

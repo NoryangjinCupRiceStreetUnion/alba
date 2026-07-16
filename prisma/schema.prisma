@@ -7,14 +7,42 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ───── Enums ─────
+
+enum TradeMethod {
+  MEET
+  DELIVER
+}
+
+enum ItemStatus {
+  AVAILABLE
+  DEACTIVATED
+}
+
+enum RentalStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  BORROWED
+  RETURNED
+  CANCELED
+}
+
+// ───── Auth.js 모델 ─────
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  nickname      String?
+  mannerScore   Float     @default(36.5)
   accounts      Account[]
   sessions      Session[]
+  items         Item[]
+  rentals       Rental[]  @relation("BorrowerRentals")
+  sentMessages  ChatMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,4 +85,81 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+// ───── 비즈니스 모델 ─────
+
+model Item {
+  id             String     @id @default(cuid())
+  ownerId        String
+  name           String
+  description    String
+  tradeMethod    TradeMethod
+  region         String
+  dailyPrice     Int
+  weeklyPrice    Int?
+  availableFrom  DateTime
+  availableUntil DateTime
+  status         ItemStatus @default(AVAILABLE)
+
+  owner   User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  images  ItemImage[]
+  rentals Rental[]
+  chats   Chat[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ItemImage {
+  id     String @id @default(cuid())
+  itemId String
+  url    String
+  order  Int    @default(0)
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+model Rental {
+  id         String       @id @default(cuid())
+  itemId     String
+  borrowerId String
+  startAt    DateTime
+  endAt      DateTime
+  totalPrice Int
+  status     RentalStatus @default(REQUESTED)
+
+  item     Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  borrower User  @relation("BorrowerRentals", fields: [borrowerId], references: [id], onDelete: Cascade)
+  chat     Chat?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Chat {
+  id        String @id @default(cuid())
+  itemId    String
+  rentalId  String? @unique
+  ownerId   String
+  borrowerId String
+
+  item     Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  rental   Rental?       @relation(fields: [rentalId], references: [id])
+  messages ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatMessage {
+  id       String @id @default(cuid())
+  chatId   String
+  senderId String
+  content  String
+
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
