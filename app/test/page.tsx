@@ -12,7 +12,7 @@ export default async function Page() {
     take: 20,
     include: {
       images: { orderBy: { order: "asc" }, take: 1 },
-      owner: { select: { nickname: true, name: true, mannerScore: true } },
+      owner: { select: { nickname: true, name: true, trustBattery: true } },
     },
   })
 
@@ -63,7 +63,7 @@ export default async function Page() {
                   </div>
                   <div className="text-right text-xs text-muted-foreground">
                     <p>{item.owner?.nickname || item.owner?.name || "알 수 없음"}</p>
-                    <p className="mt-1 font-semibold text-foreground">신뢰도 {item.owner?.mannerScore ?? 36.5}</p>
+                    <p className="mt-1 font-semibold text-foreground">신뢰 배터리 {item.owner?.trustBattery ?? 80}</p>
                   </div>
                 </div>
               </div>

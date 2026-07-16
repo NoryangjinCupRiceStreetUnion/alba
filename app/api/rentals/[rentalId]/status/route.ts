@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { RentalStatus } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
 
 // PATCH /api/rentals/:rentalId/status
@@ -11,7 +12,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ re
     }
 
     const { rentalId } = await params
-    const { status: newStatus } = await req.json()
+    const { status } = await req.json()
+    if (typeof status !== "string" || !Object.values(RentalStatus).includes(status as RentalStatus)) {
+      return NextResponse.json({ error: { code: "INVALID_STATUS", message: "지원하지 않는 대여 상태입니다." } }, { status: 400 })
+    }
+    const newStatus = status as RentalStatus
     const userId = session.user.id
 
     const rental = await prisma.rental.findUnique({
@@ -52,7 +57,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ re
 
     const updated = await prisma.rental.update({
       where: { id: rentalId },
-      data: { status: newStatus as any },
+      data: { status: newStatus },
     })
 
     return NextResponse.json({ data: updated })

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ item
       where: { id: itemId },
       include: {
         images: { orderBy: { order: "asc" } },
-        owner: { select: { id: true, name: true, nickname: true, image: true, mannerScore: true } },
+        owner: { select: { id: true, name: true, nickname: true, image: true, trustBattery: true } },
         rentals: {
           where: { status: { in: ["APPROVED", "BORROWED"] } },
           select: { startAt: true, endAt: true },

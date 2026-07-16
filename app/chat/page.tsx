@@ -4,10 +4,17 @@ import Link from "next/link"
 import { MessageCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 
-async function getChats() {
+interface ChatSummary {
+  id: string
+  ownerId: string
+  item?: { name?: string; images?: { url: string }[] }
+  rental?: { status?: string }
+  messages?: { content: string; sender?: { name?: string | null; nickname?: string | null } }[]
+}
+
+async function getChats(): Promise<ChatSummary[]> {
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
   const res = await fetch(`${baseUrl}/api/chats`, { cache: "no-store" })
   if (!res.ok) return []
@@ -49,7 +56,7 @@ export default async function ChatListPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {chats.map((chat: any, i: number) => {
+          {chats.map((chat, i) => {
             const lastMsg = chat.messages?.[0]
             const thumbnail = chat.item?.images?.[0]?.url
             const isOwner = chat.ownerId === session.user?.id

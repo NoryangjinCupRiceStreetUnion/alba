@@ -22,7 +22,7 @@ type ItemCard = {
   owner?: {
     nickname?: string | null;
     name?: string | null;
-    mannerScore?: number | null;
+    trustBattery?: number | null;
   };
 };
 
@@ -46,7 +46,7 @@ const TREND_ITEMS: TrendItem[] = [
 ];
 
 export default function Page() {
-  const [slogan, setSlogan] = useState(SLOGANS[0]);
+  const slogan = SLOGANS[0];
   const [items, setItems] = useState<ItemCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -56,7 +56,6 @@ export default function Page() {
   const [selectedRegion, setSelectedRegion] = useState("all");
 
   useEffect(() => {
-    setSlogan(SLOGANS[Math.random() > 0.5 ? 0 : 1]);
     async function loadItems() {
       try {
         const res = await fetch("/api/items?limit=50");
@@ -299,7 +298,7 @@ export default function Page() {
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <span className="text-[10px] text-muted-foreground">{item.owner?.nickname || item.owner?.name || "알 수 없음"}</span>
-                      <BatteryProgress percentage={item.owner?.mannerScore ?? 36.5} />
+                      <BatteryProgress percentage={item.owner?.trustBattery ?? 80} />
                     </div>
                   </div>
                 </div>
