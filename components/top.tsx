@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 export default async function RootLayout({ // 1. async 추가
     children,
 }: Readonly<{
-    children: React.ReactNode
+    children?: React.ReactNode
 }>) {
     // 2. await 추가
     const session = await auth()
